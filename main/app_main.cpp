@@ -26,10 +26,16 @@
 
 static const char *TAG = "twai_sender";
 
+controller_mode_t ecvt_mode = NORMAL; 
+
 /* Globally Defined For Now */
 CenterlockLimitSwitch centerlock_ls(CENTERLOCK_LIMIT_SWITCH_OUTBOUND_PIN, CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN); 
 ShiftRegister shift_reg(SR_SER_IN_PIN, SR_SHIFT_REG_CLK_PIN, SR_REG_CLK_PIN); 
-ECVTController ecvt_controller(&shift_reg); 
+ECVTController ecvt_controller(ecvt_mode, &shift_reg);
+Button button_1(BUTTON_1_PIN);
+Button button_2(BUTTON_2_PIN);
+Button button_3(BUTTON_3_PIN);
+Button button_4(BUTTON_4_PIN);
 
 // Transmission completion callback
 static IRAM_ATTR bool twai_sender_tx_done_callback(twai_node_handle_t handle, const twai_tx_done_event_data_t *edata, void *user_ctx)
@@ -60,4 +66,9 @@ static void IRAM_ATTR centerlock_ls_inbound_callback(void * params) {
 extern "C" void app_main(void)
 {
     
+    shift_reg.write_all_leds(true); 
+    while(true) {
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+
 }

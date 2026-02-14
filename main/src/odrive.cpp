@@ -224,10 +224,10 @@ void ODrive::rx_task()
     ESP_LOGI(TAG, "RX task exiting");
 }
 
-uint32_t ODrive::build_can_id(uint8_t node_id, uint16_t cmd_id)
+uint32_t ODrive::build_can_id(uint16_t cmd_id)
 {
-    // ODrive CAN ID format: (node_id << 5) | cmd_id
-    return ((uint32_t)node_id << 5) | (cmd_id & 0x1F);
+    // ODrive CAN ID format: (node_id_ << 5) | cmd_id
+    return ((uint32_t)node_id_ << 5) | (cmd_id & 0x1F);
 }
 
 void ODrive::send_can_msg(uint32_t can_id, const uint8_t* data, uint8_t len, bool remote)
@@ -251,27 +251,27 @@ void ODrive::send_can_msg(uint32_t can_id, const uint8_t* data, uint8_t len, boo
     
 }
 
-void ODrive::set_axis_state(uint8_t node_id, odrive_axis_state_t state)
+void ODrive::set_axis_state(odrive_axis_state_t state)
 {
-    uint32_t can_id = build_can_id(node_id, CAN_SET_AXIS_STATE);
+    uint32_t can_id = build_can_id(CAN_SET_AXIS_STATE);
     uint32_t state_val = (uint32_t)state;
     send_can_msg(can_id, (uint8_t*)&state_val, 4);
-    ESP_LOGI(TAG, "Set axis state: node=%d, state=%d", node_id, state);
+    ESP_LOGI(TAG, "Set axis state: node=%d, state=%d", state);
 }
 
-void ODrive::set_controller_mode(uint8_t node_id, odrive_control_mode_t ctrl_mode, odrive_input_mode_t input_mode)
+void ODrive::set_controller_mode(odrive_control_mode_t ctrl_mode, odrive_input_mode_t input_mode)
 {
-    uint32_t can_id = build_can_id(node_id, CAN_SET_CONTROLLER_MODE);
+    uint32_t can_id = build_can_id(CAN_SET_CONTROLLER_MODE);
     uint8_t data[8];
     memcpy(&data[0], &ctrl_mode, 4);
     memcpy(&data[4], &input_mode, 4);
     send_can_msg(can_id, data, 8);
-    ESP_LOGI(TAG, "Set controller mode: node=%d, ctrl=%d, input=%d", node_id, ctrl_mode, input_mode);
+    ESP_LOGI(TAG, "Set controller mode: node=%d, ctrl=%d, input=%d", ctrl_mode, input_mode);
 }
 
-void ODrive::set_input_pos(uint8_t node_id, float pos, int16_t vel_ff, int16_t torque_ff)
+void ODrive::set_input_pos(float pos, int16_t vel_ff, int16_t torque_ff)
 {
-    uint32_t can_id = build_can_id(node_id, CAN_SET_INPUT_POS);
+    uint32_t can_id = build_can_id(CAN_SET_INPUT_POS);
     uint8_t data[8];
     memcpy(&data[0], &pos, 4);
     memcpy(&data[4], &vel_ff, 2);
@@ -279,88 +279,88 @@ void ODrive::set_input_pos(uint8_t node_id, float pos, int16_t vel_ff, int16_t t
     send_can_msg(can_id, data, 8);
 }
 
-void ODrive::set_input_vel(uint8_t node_id, float vel, float torque_ff)
+void ODrive::set_input_vel(float vel, float torque_ff)
 {
-    uint32_t can_id = build_can_id(node_id, CAN_SET_INPUT_VEL);
+    uint32_t can_id = build_can_id(CAN_SET_INPUT_VEL);
     uint8_t data[8];
     memcpy(&data[0], &vel, 4);
     memcpy(&data[4], &torque_ff, 4);
     send_can_msg(can_id, data, 8);
 }
 
-void ODrive::set_input_torque(uint8_t node_id, float torque)
+void ODrive::set_input_torque(float torque)
 {
-    uint32_t can_id = build_can_id(node_id, CAN_SET_INPUT_TORQUE);
+    uint32_t can_id = build_can_id(CAN_SET_INPUT_TORQUE);
     send_can_msg(can_id, (uint8_t*)&torque, 4);
 }
 
-void ODrive::set_limits(uint8_t node_id, float vel_limit, float current_limit)
+void ODrive::set_limits(float vel_limit, float current_limit)
 {
-    uint32_t can_id = build_can_id(node_id, CAN_SET_LIMITS);
+    uint32_t can_id = build_can_id(CAN_SET_LIMITS);
     uint8_t data[8];
     memcpy(&data[0], &vel_limit, 4);
     memcpy(&data[4], &current_limit, 4);
     send_can_msg(can_id, data, 8);
-    ESP_LOGI(TAG, "Set limits: node=%d, vel=%.2f, current=%.2f", node_id, vel_limit, current_limit);
+    ESP_LOGI(TAG, "Set limits: node=%d, vel=%.2f, current=%.2f", vel_limit, current_limit);
 }
 
-void ODrive::set_pos_gain(uint8_t node_id, float pos_gain)
+void ODrive::set_pos_gain(float pos_gain)
 {
-    uint32_t can_id = build_can_id(node_id, CAN_SET_POS_GAIN);
+    uint32_t can_id = build_can_id(CAN_SET_POS_GAIN);
     send_can_msg(can_id, (uint8_t*)&pos_gain, 4);
 }
 
-void ODrive::set_vel_gains(uint8_t node_id, float vel_gain, float vel_integrator_gain)
+void ODrive::set_vel_gains(float vel_gain, float vel_integrator_gain)
 {
-    uint32_t can_id = build_can_id(node_id, CAN_SET_VEL_GAINS);
+    uint32_t can_id = build_can_id(CAN_SET_VEL_GAINS);
     uint8_t data[8];
     memcpy(&data[0], &vel_gain, 4);
     memcpy(&data[4], &vel_integrator_gain, 4);
     send_can_msg(can_id, data, 8);
 }
 
-void ODrive::estop(uint8_t node_id)
+void ODrive::estop()
 {
-    uint32_t can_id = build_can_id(node_id, CAN_ESTOP);
+    uint32_t can_id = build_can_id(CAN_ESTOP);
     send_can_msg(can_id, nullptr, 0);
-    ESP_LOGW(TAG, "E-STOP sent to node %d", node_id);
+    ESP_LOGW(TAG, "E-STOP sent to node %d", node_id_);
 }
 
-void ODrive::clear_errors(uint8_t node_id)
+void ODrive::clear_errors()
 {
-    uint32_t can_id = build_can_id(node_id, CAN_CLEAR_ERRORS);
+    uint32_t can_id = build_can_id(CAN_CLEAR_ERRORS);
     send_can_msg(can_id, nullptr, 0);
-    ESP_LOGI(TAG, "Clear errors: node=%d", node_id);
+    ESP_LOGI(TAG, "Clear errors: node=%d", node_id_);
 }
 
-void ODrive::reboot(uint8_t node_id)
+void ODrive::reboot()
 {
-    uint32_t can_id = build_can_id(node_id, CAN_REBOOT);
+    uint32_t can_id = build_can_id(CAN_REBOOT);
     send_can_msg(can_id, nullptr, 0);
-    ESP_LOGI(TAG, "Reboot: node=%d", node_id);
+    ESP_LOGI(TAG, "Reboot: node=%d", node_id_);
 }
 
-void ODrive::request_encoder_est(uint8_t node_id)
+void ODrive::request_encoder_est()
 {
-    uint32_t can_id = build_can_id(node_id, CAN_GET_ENCODER_ESTIMATES);
-    send_can_msg(can_id, nullptr, 0);
-}
-
-void ODrive::request_iq(uint8_t node_id)
-{
-    uint32_t can_id = build_can_id(node_id, CAN_GET_IQ);
+    uint32_t can_id = build_can_id(CAN_GET_ENCODER_ESTIMATES);
     send_can_msg(can_id, nullptr, 0);
 }
 
-void ODrive::request_bus_voltage_current(uint8_t node_id)
+void ODrive::request_iq()
 {
-    uint32_t can_id = build_can_id(node_id, CAN_GET_BUS_VOLTAGE_CURRENT);
+    uint32_t can_id = build_can_id(CAN_GET_IQ);
     send_can_msg(can_id, nullptr, 0);
 }
 
-void ODrive::request_temperature(uint8_t node_id)
+void ODrive::request_bus_voltage_current()
 {
-    uint32_t can_id = build_can_id(node_id, CAN_GET_TEMPERATURE);
+    uint32_t can_id = build_can_id(CAN_GET_BUS_VOLTAGE_CURRENT);
+    send_can_msg(can_id, nullptr, 0);
+}
+
+void ODrive::request_temperature()
+{
+    uint32_t can_id = build_can_id(CAN_GET_TEMPERATURE);
     send_can_msg(can_id, nullptr, 0);
 }
 
@@ -389,21 +389,21 @@ void ODrive::set_iq_callback(odrive_iq_cb_t cb, void* ctx)
 void ODrive::process_msg(const twai_frame_t& msg)
 {
     // Extract node ID and command ID from CAN ID
-    uint8_t node_id = (msg.header.id >> 5) & 0x3F;
+    uint8_t node_id_ = (msg.header.id >> 5) & 0x3F;
     uint16_t cmd_id = msg.header.id & 0x1F;
     ESP_LOGI(TAG, "RX: %x [%d] %x %x %x %x", \
                      msg.header.id, msg.header.dlc, msg.buffer[0], msg.buffer[1], msg.buffer[2], msg.buffer[3]);
     switch (cmd_id) {
         case CAN_HEARTBEAT:
-            parse_heartbeat(node_id, msg.buffer, msg.header.dlc);
+            parse_heartbeat(msg.buffer, msg.header.dlc);
             break;
             
         case CAN_GET_ENCODER_ESTIMATES:
-            parse_encoder_estimates(node_id, msg.buffer, msg.header.dlc);
+            parse_encoder_estimates(msg.buffer, msg.header.dlc);
             break;
             
         case CAN_GET_IQ:
-            parse_iq(node_id, msg.buffer, msg.header.dlc);
+            parse_iq(msg.buffer, msg.header.dlc);
             break;
             
         default:
@@ -412,7 +412,7 @@ void ODrive::process_msg(const twai_frame_t& msg)
     }
 }
 
-void ODrive::parse_heartbeat(uint8_t node_id, const uint8_t* data, uint8_t len)
+void ODrive::parse_heartbeat(const uint8_t* data, uint8_t len)
 {
     if (len < 8) return;
     
@@ -424,11 +424,11 @@ void ODrive::parse_heartbeat(uint8_t node_id, const uint8_t* data, uint8_t len)
     // data[5-7] contain procedure result and trajectory done flag
     
     if (heartbeat_cb_) {
-        heartbeat_cb_(node_id, error, state, heartbeat_ctx_);
+        heartbeat_cb_(error, state, heartbeat_ctx_);
     }
 }
 
-void ODrive::parse_encoder_estimates(uint8_t node_id, const uint8_t* data, uint8_t len)
+void ODrive::parse_encoder_estimates(const uint8_t* data, uint8_t len)
 {
     if (len < 8) return;
     
@@ -437,11 +437,11 @@ void ODrive::parse_encoder_estimates(uint8_t node_id, const uint8_t* data, uint8
     memcpy(&vel, &data[4], 4);
     
     if (encoder_cb_) {
-        encoder_cb_(node_id, pos, vel, encoder_ctx_);
+        encoder_cb_(pos, vel, encoder_ctx_);
     }
 }
 
-void ODrive::parse_iq(uint8_t node_id, const uint8_t* data, uint8_t len)
+void ODrive::parse_iq(const uint8_t* data, uint8_t len)
 {
     if (len < 8) return;
     
@@ -450,6 +450,6 @@ void ODrive::parse_iq(uint8_t node_id, const uint8_t* data, uint8_t len)
     memcpy(&iq_measured, &data[4], 4);
     
     if (iq_cb_) {
-        iq_cb_(node_id, iq_setpoint, iq_measured, iq_ctx_);
+        iq_cb_(iq_setpoint, iq_measured, iq_ctx_);
     }
 }
