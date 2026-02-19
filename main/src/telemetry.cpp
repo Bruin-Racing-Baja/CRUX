@@ -1,12 +1,26 @@
 #include "telemetry.h"
+#include "driver/usb_serial_jtag.h"
+#include "esp_log.h"
+VehicleData Telemetry::data;
+SemaphoreHandle_t Telemetry::data_mutex;
 
-Telemetry::Telemetry()
+int Telemetry::sequence_number = 0;
+void Telemetry::init()
 {
+    
     data_mutex = xSemaphoreCreateMutex();
     sequence_number = 0;
+    usb_serial_jtag_driver_config_t usb_config = {
+        .tx_buffer_size = 1024,
+        .rx_buffer_size = 1024,
+    };
+    
+    // Install the driver
+    usb_serial_jtag_driver_install(&usb_config);
+
 }
 
-bool Telemetry::lock(TickType_t timeout_ticks = portMAX_DELAY) {
+bool Telemetry::lock(TickType_t timeout_ticks) {
     return xSemaphoreTake(data_mutex, timeout_ticks) == pdTRUE;
 }
 
@@ -15,17 +29,18 @@ void Telemetry::unlock() {
 } 
 
 void Telemetry::send_data() {
+
     TelemetryPacket packet;
     packet.start_byte_1 = 0xFA;
     packet.start_byte_2 = 0xCE;
     packet.packet_type = 0x01; 
-    packet.sequence_number = sequence_number++;
+    packet.sequence_number = Telemetry::sequence_number++;
 
     lock();
-
-    memcpy(&packet.payload, &data, sizeof(VehicleData));
+    memcpy(&packet.payload, &Telemetry::data, sizeof(VehicleData));
     unlock();
+
     packet.checksum = esp_rom_crc32_le(0, (uint8_t*)&packet, sizeof(TelemetryPacket) - sizeof(packet.checksum));
 
-    uart_write_bytes(UART_NUM_0, (const char*)&packet, sizeof(TelemetryPacket));
+    usb_serial_jtag_write_bytes(&packet, sizeof(TelemetryPacket), pdMS_TO_TICKS(100));
 }

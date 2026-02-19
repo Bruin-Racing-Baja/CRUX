@@ -6,7 +6,13 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "esp_rom_crc.h"
+#include <cstring>
+#include "driver/uart.h"
+#include "driver/gpio.h"
 
+#define TXD_PIN (GPIO_NUM_43)
+#define RXD_PIN (GPIO_NUM_44)
+#define UART_PORT (UART_NUM_0)
 #pragma pack(push, 1)
 struct VehicleData {
     float timestamp;
@@ -37,15 +43,15 @@ struct TelemetryPacket {
 
 class Telemetry {
 public:
-    Telemetry();
-    void send_data();
-    VehicleData data;
-    SemaphoreHandle_t data_mutex;
-    bool lock(TickType_t timeout_ticks = portMAX_DELAY);
-    void unlock();
-
+    static void init();
+    static void send_data();
+    static VehicleData data;
+    static bool lock(TickType_t timeout_ticks = portMAX_DELAY);
+    static void unlock();
+    
 private:
-    int sequence_number;
+    static int sequence_number;
+    static SemaphoreHandle_t data_mutex;
     
 };
 

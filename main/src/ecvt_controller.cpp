@@ -2,6 +2,7 @@
 
 void ECVTController::control_loop()
 {
+    //This is just for testing right now
     if(telem->lock())
     {
         struct timeval tv_now;
