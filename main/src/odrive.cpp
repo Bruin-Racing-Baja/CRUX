@@ -7,7 +7,7 @@ static const char* TAG = "ODrive";
 ODrive::ODrive()
     : tx_pin_(GPIO_NUM_NC)
     , rx_pin_(GPIO_NUM_NC)
-    , bitrate_(500000)
+    , bitrate_(250000)
     , rx_buffer_depth_(64)
     , node_handle_(nullptr)
     , rx_pool_(nullptr)
@@ -75,7 +75,7 @@ bool ODrive::init(gpio_num_t tx_pin, gpio_num_t rx_pin, uint32_t bitrate)
 
     twai_mask_filter_config_t mfilter_cfg = {
     .id = 0x00,         
-    .mask = 0x7ff,                          
+    .mask = 0x00,                          
     .is_ext = false,    
     };
     // Create TWAI node

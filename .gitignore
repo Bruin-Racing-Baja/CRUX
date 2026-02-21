@@ -22,6 +22,7 @@ dependencies.lock
 .vscode/*.db
 .vscode/c_cpp_properties.json
 .vscode/ipch/
+.vscode/settings.json
 
 # CMake
 compile_commands.json
