@@ -5,6 +5,7 @@ idf_component_register(
         "src/centerlock_controller.cpp" 
         "src/odrive.cpp"
         "src/gpio_wrapper.cpp"
+        "src/telemetry.cpp"
         "src/sensors/gear_tooth_sensor.cpp" 
         "src/shift_register.cpp"
         "app_main.cpp"
