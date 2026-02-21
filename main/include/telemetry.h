@@ -10,9 +10,6 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 
-#define TXD_PIN (GPIO_NUM_43)
-#define RXD_PIN (GPIO_NUM_44)
-#define UART_PORT (UART_NUM_0)
 #pragma pack(push, 1)
 struct VehicleData {
     float timestamp;
