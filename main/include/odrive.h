@@ -98,7 +98,7 @@ typedef void (*odrive_iq_cb_t)(float iq_setpoint, float iq_measured, void* ctx);
 
 class ODrive {
 public:
-    ODrive();
+    ODrive(uint8_t node_id);
     ~ODrive();
 
     // Initialize CAN bus

@@ -5,12 +5,14 @@
 
 static const char* TAG = "ODrive";
 
-ODrive::ODrive()
-    : tx_pin_(GPIO_NUM_NC)
+ODrive::ODrive(uint8_t node_id)
+    :  last_heartbeat_us(0)
+    , tx_pin_(GPIO_NUM_NC)
     , rx_pin_(GPIO_NUM_NC)
     , bitrate_(250000)
     , rx_buffer_depth_(64)
     , node_handle_(nullptr)
+    , node_id_(node_id)
     , rx_pool_(nullptr)
     , write_idx_(0)
     , read_idx_(0)
@@ -227,11 +229,18 @@ void ODrive::rx_task()
 uint32_t ODrive::build_can_id(uint16_t cmd_id)
 {
     // ODrive CAN ID format: (node_id_ << 5) | cmd_id
+    ESP_LOGI(TAG, "can_id: %d", ((uint32_t)node_id_ << 5) | (cmd_id & 0x1F));
     return ((uint32_t)node_id_ << 5) | (cmd_id & 0x1F);
 }
 
 void ODrive::send_can_msg(uint32_t can_id, const uint8_t* data, uint8_t len, bool remote)
 {
+    uint8_t tx_data[TWAI_FRAME_MAX_LEN] = {0};
+    
+    if (data && len > 0) {
+        memcpy(tx_data, data, len);
+    }
+    
     twai_frame_t tx_msg = {
         .header = {
             .id = can_id,
@@ -240,12 +249,9 @@ void ODrive::send_can_msg(uint32_t can_id, const uint8_t* data, uint8_t len, boo
             .rtr = remote,
             .fdf = false,
         },
+        .buffer = tx_data,
         .buffer_len = len,  // Length of data to transmit
     };
-
-    if (data && len > 0) {
-        memcpy(tx_msg.buffer, data, len);
-    }
 
     ESP_ERROR_CHECK(twai_node_transmit(node_handle_, &tx_msg, pdMS_TO_TICKS(100)));
     
@@ -391,11 +397,12 @@ void ODrive::process_msg(const twai_frame_t& msg)
     // Extract node ID and command ID from CAN ID
     uint8_t node_id_ = (msg.header.id >> 5) & 0x3F;
     uint16_t cmd_id = msg.header.id & 0x1F;
-    ESP_LOGI(TAG, "RX: %x [%d] %x %x %x %x", \
-                     msg.header.id, msg.header.dlc, msg.buffer[0], msg.buffer[1], msg.buffer[2], msg.buffer[3]);
+    /* ESP_LOGI(TAG, "RX: %x [%d] %x %x %x %x", \
+                    msg.header.id, msg.header.dlc, msg.buffer[0], msg.buffer[1], msg.buffer[2], msg.buffer[3]); */
     switch (cmd_id) {
         case CAN_HEARTBEAT:
             parse_heartbeat(msg.buffer, msg.header.dlc);
+            last_heartbeat_us = esp_timer_get_time();
             break;
             
         case CAN_GET_ENCODER_ESTIMATES:
