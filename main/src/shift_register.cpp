@@ -44,12 +44,12 @@ bool ShiftRegister::write_led(uint8_t led_num, bool value) {
 }
 
 void ShiftRegister::write_all_leds(bool value) {
-    write_led(0, value);
-    write_led(1, value);
-    write_led(2, value);
-    write_led(3, value);
-    write_led(4, value);
-    write_led(5, value);
-    write_led(6, value);
-    write_led(7, value);
+    uint8_t mask; 
+    if (value) {
+        mask = 0b11111111; 
+    } else {
+        mask = 0; 
+    }
+
+    write_byte(mask);
 }
