@@ -1,14 +1,16 @@
-#include "centerlock_controller.h"
+#include <centerlock_controller.h>
 #include <constants.h>
 #include <odrive.h>
+#include <types.h>
+#include <macros.h>
+
 
 uint32_t out_pin_ =  1;
 uint32_t in_pin_ = 2;
 
-// make centerlock limit switches 
-CenterlockLimitSwitch centerlocklimitswitch(out_pin_, in_pin_);
+// make centerlock controller - has limit switch implemented 
 
-Centerlock_controller::Centerlock_controller(ODrive *odrive) : odrive(odrive), current_state(UNHOMED), engage(false), num_tries(0), cycles_since_stopped(0) {}
+Centerlock_controller::Centerlock_controller(ODrive *odrive) : odrive(odrive), curr_state(UNHOMED), centerlocklimitswitch(OUT_PIN, IN_PIN), num_tries(0), cycles_since_stopped(0) {}
 
 // Call homing sequence when first turned on
 u8 Centerlock_controller::home(u32 timeout_ms){
@@ -19,7 +21,7 @@ u8 Centerlock_controller::home(u32 timeout_ms){
     }
 
     u32 start_time = millis();
-    Serial.printf("Engaging...");   
+    Serial.printf("disengaging...");   
 
     // set velocity on Odrive for the centerlock shifting
     set_velocity(ECENTERLOCK_HOME_VEL);
@@ -29,62 +31,112 @@ u8 Centerlock_controller::home(u32 timeout_ms){
 }   
 
 // Call centerlock controller
-u8 Centerlock_controller::control(u32 timeout_ms, bool button_input_4WD, bool button_input_2WD){
+u8 Centerlock_controller::control(u32 timeout_ms, bool req_4wd, bool req_2wd) {
 
-    u32 start = millis();
-    float cur_pos = 0;
-
-    if(button_input_2WD){
-        while(!centerlocklimitswitch.is_outbound()){
-            if(millis() - start > timeout_ms){
-                return CONTROL_TIMEOUT;
-            }
-
-            odrive->request_nonstand_pos_rel();
-            set_velocity(ECENTERLOCK_2WD_VEL);
-            delay(50);
-
-            cur_pos = odrive->get_pos_rel();
-            Serial.printf("Shifting to 2WD: %f\n", cur_pos);
-        }
-        return CONTROL_SUCCESS;
-    }
-
-    if(button_input_4WD){
-        while(!centerlocklimitswitch.is_inbound()){
-            if(millis() - start > timeout_ms){
-                return CONTROL_TIMEOUT;
-            }
-
-            odrive->request_nonstand_pos_rel();
-            set_velocity(ECENTERLOCK_4WD_VEL);
-            delay(50);
-
-            cur_pos = odrive->get_pos_rel();
-            Serial.printf("Engaging 4WD: %f\n", cur_pos);
-        }
-        return CONTROL_SUCCESS;
-    }
-
+    // protect the buttons 
+    if(req_4wd && req_2wd){
+    set_velocity(0);
     return CONTROL_IDLE;
 }
+    // initialize the switches / controller
+    u32 now = millis();
+    if(centerlocklimitswitch.is_inbound() && centerlocklimitswitch.is_outbound()){
+    curr_state = ERROR;
+    set_velocity(0);
+    return CONTROL_ERROR;
+}
+    switch(curr_state) {
+
+    case UNHOMED:
+        curr_state = HOMING;
+        start_time = now;
+        set_velocity(ECENTERLOCK_HOME_VEL);
+        break;
+
+    case HOMING:
+        if(centerlocklimitswitch.is_outbound()){
+            set_velocity(0);
+            odrive->set_pos_rel(0);   // zero reference
+            curr_state = ENGAGED_2WD;
+        } 
+        else if(now - start_time > timeout_ms){
+            curr_state = ERROR;
+            return CONTROL_TIMEOUT;
+        }
+        break;
+
+    case ENGAGED_2WD:
+        if(req_4wd){
+            curr_state = SHIFTING_TO_4WD;
+            start_time = now;
+            set_velocity(ECENTERLOCK_4WD_VEL);
+        }
+        break;
+
+    case SHIFTING_TO_4WD:
+        if(centerlocklimitswitch.is_inbound()){
+            set_velocity(0);
+            curr_state = ENGAGED_4WD;
+        } 
+        else if(now - start_time > timeout_ms){
+            curr_state = ERROR;
+            return CONTROL_TIMEOUT;
+        }
+        break;
+
+    case ENGAGED_4WD:
+        if(req_2wd){
+            curr_state = SHIFTING_TO_2WD;
+            start_time = now;
+            set_velocity(ECENTERLOCK_2WD_VEL);
+        }
+        break;
+
+    case SHIFTING_TO_2WD:
+        if(centerlocklimitswitch.is_outbound()){
+            set_velocity(0);
+            curr_state = ENGAGED_2WD;
+        } 
+        else if(now - start_time > timeout_ms){
+            curr_state = ERROR;
+            return CONTROL_TIMEOUT;
+        }
+        break;
+
+    case ERROR:
+        set_velocity(0);
+        return CONTROL_ERROR;
+    }
+
+    return CONTROL_RUNNING;
+}
+
+
+
+u8 Centerlock_controller::get_State(){
+    return curr_state;
+}
+
 
 u8 Centerlock_controller::set_velocity(float velocity) {
   if (odrive->get_axis_state() == ODrive::AXIS_STATE_IDLE) {
     odrive->set_axis_state(ODrive::AXIS_STATE_CLOSED_LOOP_CONTROL);
   }
 
-  if (odrive->set_controller_mode(ODrive::CONTROL_MODE_VELOCITY_CONTROL,
-                                  ODrive::INPUT_MODE_VEL_RAMP) != 0) {
-    return SET_VELOCITY_CAN_ERROR;
-  }
+// add if using more than just velocity controller
+//   if (odrive->set_controller_mode(ODrive::CONTROL_MODE_VELOCITY_CONTROL,
+//                                   ODrive::INPUT_MODE_VEL_RAMP) != 0) {
+//     return SET_VELOCITY_CAN_ERROR;
+//   }
 
   velocity = CLAMP(velocity, -ODRIVE_VEL_LIMIT, ODRIVE_VEL_LIMIT);
   if (odrive->set_input_vel(velocity, 0) != 0) {
     return SET_VELOCITY_CAN_ERROR;
   }
 
-  velocity_mode = true;
-
   return SET_VELOCITY_SUCCCESS;
 }
+bool Centerlock_controller::get_outbound_limit() {
+  return !digitalRead(ECENTERLOCK_SENSOR_PIN);
+}
+
