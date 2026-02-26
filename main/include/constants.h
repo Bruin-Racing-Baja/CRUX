@@ -1,9 +1,8 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 #include <stdint.h>
-
 #include <cstdint>
-
+#include <macros.h>
 /* Units */
 constexpr float SECONDS_PER_MINUTE = 60.0; /* s / min */
 constexpr float MS_PER_SECOND = 1.0e3;     /* ms / s */ 
@@ -24,6 +23,11 @@ constexpr uint32_t GEAR_SAMPLE_WINDOW = 10;
 constexpr float ENGINE_COUNTS_PER_ROT = 16; // count / rot
 constexpr float GEAR_COUNTS_PER_ROT = 6;    // count / rot
 
+constexpr float GEAR_TO_WHEEL_RATIO = 58.0 / 19.0;                
+constexpr float GEAR_TO_SECONDARY_RATIO = 17.0 / 50.0;
+
+constexpr uint32_t CONTROL_FUNCTION_INTERVAL_MS = 10;
+
 // Electronics Pins 
 constexpr uint32_t ENGINE_GEARTOOTH_SENSOR_PIN = 17;
 constexpr uint32_t GEARBOX_GEARTOOTH_SENSOR_PIN = 16;
@@ -42,5 +46,47 @@ constexpr int DAQ_LED_1_PIN = 21;
 
 constexpr int DAQ_BUTTON_A_PIN = 5;
 constexpr int DAQ_BUTTON_B_PIN = 4;
+
+
+constexpr uint32_t ENGINE_RPM_MEDIAN_FILTER_WINDOW = 3;
+
+constexpr float ENGINE_RPM_ROTATION_FILTER_B[] = {
+    0.8677114646, -3.305398989, 4.8804516238, -3.305398989, 0.8677114646};
+constexpr float ENGINE_RPM_ROTATION_FILTER_A[] = {
+    1.0, -3.5518051128, 4.8720546544, -3.0589928651, 0.7438198987};
+constexpr size_t ENGINE_RPM_ROTATION_FILTER_M =
+    COUNT_OF(ENGINE_RPM_ROTATION_FILTER_B);
+constexpr size_t ENGINE_RPM_ROTATION_FILTER_N =
+    COUNT_OF(ENGINE_RPM_ROTATION_FILTER_A);
+
+constexpr float ENGINE_RPM_TIME_FILTER_B[] = {0.24523727525278557,
+                                              0.24523727525278557};
+constexpr float ENGINE_RPM_TIME_FILTER_A[] = {1.0, -0.5095254494944288};
+constexpr size_t ENGINE_RPM_TIME_FILTER_M = COUNT_OF(ENGINE_RPM_TIME_FILTER_B);
+constexpr size_t ENGINE_RPM_TIME_FILTER_N = COUNT_OF(ENGINE_RPM_TIME_FILTER_A);
+
+constexpr float ENGINE_RPM_DERROR_FILTER_B[] = {0.07295965726826667,
+                                                0.0729596572682667};
+constexpr float ENGINE_RPM_DERROR_FILTER_A[] = {1.0, -0.8540806854634666};
+constexpr size_t ENGINE_RPM_DERROR_FILTER_M =
+    COUNT_OF(ENGINE_RPM_DERROR_FILTER_B);
+constexpr size_t ENGINE_RPM_DERROR_FILTER_N =
+    COUNT_OF(ENGINE_RPM_DERROR_FILTER_A);
+
+constexpr float GEAR_RPM_TIME_FILTER_B[] = {
+    0.007820208033497193, 0.015640416066994386, 0.007820208033497193};
+constexpr float GEAR_RPM_TIME_FILTER_A[] = {1.0, -1.734725768809275,
+                                            0.7660066009432638};
+constexpr size_t GEAR_RPM_TIME_FILTER_M = COUNT_OF(GEAR_RPM_TIME_FILTER_B);
+constexpr size_t GEAR_RPM_TIME_FILTER_N = COUNT_OF(GEAR_RPM_TIME_FILTER_A);
+
+constexpr float THROTTLE_FILTER_B[] = {0.0591907, 0.0591907};
+constexpr float THROTTLE_FILTER_A[] = {1., -0.88161859};
+constexpr size_t THROTTLE_FILTER_M = COUNT_OF(THROTTLE_FILTER_B);
+constexpr size_t THROTTLE_FILTER_N = COUNT_OF(THROTTLE_FILTER_A);
+
+constexpr float ACTUATOR_KP = 0.03;   
+constexpr float ACTUATOR_KI = 0.000;   
+constexpr float ACTUATOR_KD = 0.000;
 
 #endif // CONSTANTS_H

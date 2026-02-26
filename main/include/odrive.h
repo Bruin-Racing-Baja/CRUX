@@ -91,6 +91,15 @@ typedef enum {
     INPUT_MODE_TUNING = 8,
 } odrive_input_mode_t;
 
+struct CanMessage {
+    uint32_t id;
+    uint8_t len;
+    uint8_t data[8];
+};
+
+// The FreeRTOS Queue Handle
+
+
 // Callback types
 typedef void (*odrive_heartbeat_cb_t)(uint8_t node_id, uint32_t error, uint8_t state, void* ctx);
 typedef void (*odrive_encoder_cb_t)(uint8_t node_id, float pos, float vel, void* ctx);
@@ -138,6 +147,7 @@ public:
     void set_iq_callback(odrive_iq_cb_t cb, void* ctx);
 
 private:
+    static QueueHandle_t can_tx_queue;
     struct RxFrameBuffer {
         twai_frame_t frame;
         uint8_t data[8];
@@ -152,6 +162,7 @@ private:
 
 
     // RX task
+    static void can_tx_task(void* pvParameters);
     static void rx_task_entry(void* arg);
     void rx_task();
     void process_msg(const twai_frame_t& msg);
