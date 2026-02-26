@@ -92,7 +92,8 @@ bool ODrive::init(gpio_num_t tx_pin, gpio_num_t rx_pin, uint32_t bitrate)
 
     ESP_LOGI(TAG, "TWAI node created (TX: GPIO%d, RX: GPIO%d, %lu bps, %d buffer depth)", 
              tx_pin, rx_pin, bitrate, rx_buffer_depth_);
-
+    
+    can_tx_queue = xQueueCreate(50, sizeof(CanMessage));
     return true;
 }
 
@@ -116,6 +117,7 @@ bool ODrive::start()
         running_ = false;
         return false;
     }
+    xTaskCreatePinnedToCore(can_tx_task, "odrive_can_tx", 4096, this, tskIDLE_PRIORITY + 6, NULL, 1);
     ESP_LOGI(TAG, "ODrive CAN started");
     return true;
 }
@@ -271,7 +273,7 @@ void ODrive::send_can_msg(uint32_t can_id, const uint8_t* data, uint8_t len, boo
     if (can_tx_queue != nullptr) {
         xQueueSend(can_tx_queue, &msg, 0); 
     }
-
+    /*
     uint8_t tx_data[TWAI_FRAME_MAX_LEN] = {0};
     ESP_LOGI(TAG, "Sending CAN message: id=0x%x, len=%d", can_id, len);
     if (data && len > 0) {
@@ -290,7 +292,7 @@ void ODrive::send_can_msg(uint32_t can_id, const uint8_t* data, uint8_t len, boo
     };
 
     ESP_ERROR_CHECK(twai_node_transmit(node_handle_, &tx_msg, pdMS_TO_TICKS(100)));
-    
+    */
 }
 
 void ODrive::set_axis_state(uint8_t node_id, odrive_axis_state_t state)

@@ -90,12 +90,13 @@ typedef enum {
     INPUT_MODE_MIRROR = 7,
     INPUT_MODE_TUNING = 8,
 } odrive_input_mode_t;
-
+#pragma pack(push, 1)
 struct CanMessage {
     uint32_t id;
     uint8_t len;
     uint8_t data[8];
 };
+#pragma pack(pop)
 
 // The FreeRTOS Queue Handle
 
