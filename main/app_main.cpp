@@ -1,4 +1,8 @@
+#include "esp_vfs_dev.h"
+#include "esp_vfs_usb_serial_jtag.h"
+#include "driver/usb_serial_jtag.h"
 #include <stdio.h>
+#include "driver/usb_serial_jtag.h"
 #include <string.h>
 #include <sys/param.h>
 
@@ -13,6 +17,8 @@
 #include <constants.h> 
 #include <gpio_wrapper.h>
 #include <odrive.h>
+#include <telemetry.h>
+#include <ecvt_controller.h>
 
 #include <sensors/gear_tooth_sensor.h>
 #include <sensors/brake_pot_sensor.h>
@@ -57,7 +63,7 @@ static IRAM_ATTR bool twai_sender_tx_done_callback(twai_node_handle_t handle, co
 // Bus error callback
 static IRAM_ATTR bool twai_sender_on_error_callback(twai_node_handle_t handle, const twai_error_event_data_t *edata, void *user_ctx)
 {
-    ESP_EARLY_LOGW(TAG, "TWAI node error: 0x%x", edata->err_flags.val);
+    //ESP_EARLY_LOGW(TAG2, "TWAI node error: 0x%x", edata->err_flags.val);
     return false; // No task wake required
 }
 
@@ -97,4 +103,23 @@ extern "C" void app_main(void)
     // {
     //     vTaskDelay(pdMS_TO_TICKS(100));
     // }
+
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    Telemetry::init();
+
+    ODrive odrive;
+    odrive.init(TWAI_SENDER_TX_GPIO, TWAI_SENDER_RX_GPIO, TWAI_BITRATE);
+    odrive.start();
+    odrive.clear_errors(0);
+    odrive.set_limits(3, 5.0f, 5.0f);
+    odrive.set_axis_state(3, AXIS_STATE_CLOSED_LOOP_CONTROL);
+    vTaskDelay(pdMS_TO_TICKS(500));
+    ECVTController ecvt(&odrive, &primary_gts, &secondary_gts);
+    ecvt.start();
+    ESP_LOGI(TAG, "Start2");
+    while(true)
+    {
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
 }

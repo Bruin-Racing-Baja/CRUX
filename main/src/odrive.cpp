@@ -3,7 +3,7 @@
 #include <string.h>
 
 static const char* TAG = "ODrive";
-
+QueueHandle_t ODrive::can_tx_queue; 
 ODrive::ODrive()
     : tx_pin_(GPIO_NUM_NC)
     , rx_pin_(GPIO_NUM_NC)
@@ -92,7 +92,8 @@ bool ODrive::init(gpio_num_t tx_pin, gpio_num_t rx_pin, uint32_t bitrate)
 
     ESP_LOGI(TAG, "TWAI node created (TX: GPIO%d, RX: GPIO%d, %lu bps, %d buffer depth)", 
              tx_pin, rx_pin, bitrate, rx_buffer_depth_);
-
+    
+    can_tx_queue = xQueueCreate(50, sizeof(CanMessage));
     return true;
 }
 
@@ -106,7 +107,7 @@ bool ODrive::start()
         "odrive_can_rx",
         4096,
         this,
-        tskIDLE_PRIORITY + 5,
+        tskIDLE_PRIORITY + 6,
         &rx_task_handle_
     );
 
@@ -116,6 +117,7 @@ bool ODrive::start()
         running_ = false;
         return false;
     }
+    xTaskCreatePinnedToCore(can_tx_task, "odrive_can_tx", 4096, this, tskIDLE_PRIORITY + 6, NULL, 1);
     ESP_LOGI(TAG, "ODrive CAN started");
     return true;
 }
@@ -196,6 +198,36 @@ bool IRAM_ATTR ODrive::on_state_change_ISR(twai_node_handle_t handle, const twai
     return false;
 }
 
+void ODrive::can_tx_task(void* pvParameters) {
+    ODrive* instance = static_cast<ODrive*>(pvParameters);
+    CanMessage msg;
+    
+    static uint8_t tx_data[8];
+    static twai_frame_t tx_frame = {};
+    
+    tx_frame.buffer = tx_data;
+    tx_frame.header.ide = false; 
+    tx_frame.header.rtr = false; 
+    tx_frame.header.fdf = false; 
+
+    while (true) {
+        if (xQueueReceive(can_tx_queue, &msg, portMAX_DELAY) == pdTRUE) {
+            
+            tx_frame.header.id = msg.id;
+            tx_frame.header.dlc = msg.len;
+            tx_frame.buffer_len = msg.len;
+            memcpy(tx_data, msg.data, msg.len);
+
+            if (twai_node_transmit(instance->node_handle_, &tx_frame, pdMS_TO_TICKS(100)) == ESP_OK) {
+                
+                // CRITICAL FIX: Wait for transmission to finish before we loop 
+                // around and overwrite tx_data with the next message!
+                twai_node_transmit_wait_all_done(instance->node_handle_, pdMS_TO_TICKS(100));
+            }
+        }
+    }
+}
+
 void ODrive::rx_task_entry(void* arg)
 {
     ODrive* self = (ODrive*)arg;
@@ -231,6 +263,22 @@ uint32_t ODrive::build_can_id(uint8_t node_id, uint16_t cmd_id)
 
 void ODrive::send_can_msg(uint32_t can_id, const uint8_t* data, uint8_t len, bool remote)
 {
+
+    CanMessage msg = {};
+    msg.id = can_id;
+    msg.len = len;
+    if (data && len > 0) {
+        memcpy(msg.data, data, len);
+    }
+    if (can_tx_queue != nullptr) {
+        xQueueSend(can_tx_queue, &msg, 0); 
+    }
+    /*
+    uint8_t tx_data[TWAI_FRAME_MAX_LEN] = {0};
+    ESP_LOGI(TAG, "Sending CAN message: id=0x%x, len=%d", can_id, len);
+    if (data && len > 0) {
+        memcpy(tx_data, data, len);
+    }
     twai_frame_t tx_msg = {
         .header = {
             .id = can_id,
@@ -239,15 +287,12 @@ void ODrive::send_can_msg(uint32_t can_id, const uint8_t* data, uint8_t len, boo
             .rtr = remote,
             .fdf = false,
         },
+        .buffer = tx_data,
         .buffer_len = len,  // Length of data to transmit
     };
 
-    if (data && len > 0) {
-        memcpy(tx_msg.buffer, data, len);
-    }
-
     ESP_ERROR_CHECK(twai_node_transmit(node_handle_, &tx_msg, pdMS_TO_TICKS(100)));
-    
+    */
 }
 
 void ODrive::set_axis_state(uint8_t node_id, odrive_axis_state_t state)
@@ -386,8 +431,8 @@ void ODrive::process_msg(const twai_frame_t& msg)
     // Extract node ID and command ID from CAN ID
     uint8_t node_id = (msg.header.id >> 5) & 0x3F;
     uint16_t cmd_id = msg.header.id & 0x1F;
-    ESP_LOGI(TAG, "RX: %x [%d] %x %x %x %x", \
-                     msg.header.id, msg.header.dlc, msg.buffer[0], msg.buffer[1], msg.buffer[2], msg.buffer[3]);
+    //ESP_LOGI(TAG, "RX: %x [%d] %x %x %x %x", 
+                   //  msg.header.id, msg.header.dlc, msg.buffer[0], msg.buffer[1], msg.buffer[2], msg.buffer[3]);
     switch (cmd_id) {
         case CAN_HEARTBEAT:
             parse_heartbeat(node_id, msg.buffer, msg.header.dlc);
