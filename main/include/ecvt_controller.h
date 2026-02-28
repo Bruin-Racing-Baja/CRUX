@@ -16,8 +16,8 @@ class ECVTController {
 public:
     ECVTController(controller_mode_t mode_, ShiftRegister* sr, bool wait_for_can = true);
 
-    void init(bool wait_for_can);
-    bool home_actuator(); 
+    void init(bool wait_for_can=true);
+    bool home_actuator(uint32_t timeout_ms=5000); 
     
     void control_function(); 
     void button_shift_control_function(); 
@@ -26,6 +26,9 @@ public:
 private: 
     static ECVTController* instance;
     controller_mode_t mode; 
+
+    bool get_outbound_limit(); 
+    bool get_engage_limit();
 
     static IRAM_ATTR void primary_isr(void* p = nullptr);
     static IRAM_ATTR void secondary_isr(void* p = nullptr);
