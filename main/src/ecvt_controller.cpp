@@ -4,7 +4,7 @@
 #include <macros.h>
 
 static const char *TAG = "twai_sender";
-
+ECVTController* ECVTController::instance = nullptr;
 ECVTController::ECVTController(controller_mode_t mode_, ShiftRegister* sr, bool wait_for_can)
     : mode(mode_),
       primary_gts(ENGINE_GEARTOOTH_SENSOR_PIN, ENGINE_SAMPLE_WINDOW, ENGINE_COUNTS_PER_ROT), 
