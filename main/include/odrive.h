@@ -102,13 +102,13 @@ struct CanMessage {
 
 
 // Callback types
-typedef void (*odrive_heartbeat_cb_t)(uint8_t node_id, uint32_t error, uint8_t state, void* ctx);
-typedef void (*odrive_encoder_cb_t)(uint8_t node_id, float pos, float vel, void* ctx);
-typedef void (*odrive_iq_cb_t)(uint8_t node_id, float iq_setpoint, float iq_measured, void* ctx);
+typedef void (*odrive_heartbeat_cb_t)(uint32_t error, uint8_t state, void* ctx);
+typedef void (*odrive_encoder_cb_t)(float pos, float vel, void* ctx);
+typedef void (*odrive_iq_cb_t)(float iq_setpoint, float iq_measured, void* ctx);
 
 class ODrive {
 public:
-    ODrive();
+    ODrive(uint8_t node_id);
     ~ODrive();
 
     // Initialize CAN bus
@@ -118,29 +118,28 @@ public:
     bool start();
     void stop();
 
-    
-
-
-
     // Command functions
-    void set_axis_state(uint8_t node_id, odrive_axis_state_t state);
-    void set_controller_mode(uint8_t node_id, odrive_control_mode_t ctrl_mode, odrive_input_mode_t input_mode);
-    void set_input_mode(uint8_t node_id, float pos, int16_t vel_ff = 0, int16_t torque_ff = 0);
-    void set_input_vel(uint8_t node_id, float vel, float torque_ff = 0.0f);
-    void set_input_torque(uint8_t node_id, float torque);
-    void set_input_pos(uint8_t node_id, float pos, int16_t vel_ff, int16_t torque_ff);
-    void set_limits(uint8_t node_id, float vel_limit, float current_limit);
-    void set_pos_gain(uint8_t node_id, float pos_gain);
-    void set_vel_gains(uint8_t node_id, float vel_gain, float vel_integrator_gain);
-    void estop(uint8_t node_id);
-    void clear_errors(uint8_t node_id);
-    void reboot(uint8_t node_id);
+    void set_axis_state(odrive_axis_state_t state);
+    void set_controller_mode(odrive_control_mode_t ctrl_mode, odrive_input_mode_t input_mode);
+    void set_input_mode(float pos, int16_t vel_ff = 0, int16_t torque_ff = 0);
+    void set_input_vel(float vel, float torque_ff = 0.0f);
+    void set_input_torque(float torque);
+    void set_input_pos(float pos, int16_t vel_ff, int16_t torque_ff);
+    void set_limits(float vel_limit, float current_limit);
+    void set_pos_gain(float pos_gain);
+    void set_vel_gains(float vel_gain, float vel_integrator_gain);
+    void estop();
+    void clear_errors();
+    void reboot();
 
     // Request functions
-    void request_encoder_est(uint8_t node_id);
-    void request_iq(uint8_t node_id);
-    void request_bus_voltage_current(uint8_t node_id);
-    void request_temperature(uint8_t node_id);
+    void request_encoder_est();
+    void request_iq();
+    void request_bus_voltage_current();
+    void request_temperature();
+
+    // Getter functions 
+    uint32_t get_time_since_last_heartbeat(); 
 
     // Callback registration
     void set_heartbeat_callback(odrive_heartbeat_cb_t cb, void* ctx);
@@ -154,13 +153,12 @@ private:
         uint8_t data[8];
     };
     // CAN message construction
-    uint32_t build_can_id(uint8_t node_id, uint16_t cmd_id);
+    uint32_t build_can_id(uint16_t cmd_id);
     void send_can_msg(uint32_t can_id, const uint8_t* data, uint8_t len, bool remote = false);
     
     static bool IRAM_ATTR on_rx_done_ISR(twai_node_handle_t handle, const twai_rx_done_event_data_t* edata, void* user_ctx);
     static bool IRAM_ATTR on_error_ISR(twai_node_handle_t handle, const twai_error_event_data_t* edata, void* user_ctx);
     static bool IRAM_ATTR on_state_change_ISR(twai_node_handle_t handle, const twai_state_change_event_data_t* edata, void* user_ctx);
-
 
     // RX task
     static void can_tx_task(void* pvParameters);
@@ -169,18 +167,24 @@ private:
     void process_msg(const twai_frame_t& msg);
 
     // Helper functions for parsing
-    void parse_heartbeat(uint8_t node_id, const uint8_t* data, uint8_t len);
-    void parse_encoder_estimates(uint8_t node_id, const uint8_t* data, uint8_t len);
-    void parse_iq(uint8_t node_id, const uint8_t* data, uint8_t len);
+    void parse_heartbeat(const uint8_t* data, uint8_t len);
+    void parse_encoder_estimates(const uint8_t* data, uint8_t len);
+    void parse_iq(const uint8_t* data, uint8_t len);
 
+    // Heartbeat 
+    uint64_t last_heartbeat_us;
+    
     // Configuration
     gpio_num_t tx_pin_;
     gpio_num_t rx_pin_;
     uint32_t bitrate_;
     int rx_buffer_depth_;
 
-    twai_node_handle_t node_handle_;
     // Task handle
+    twai_node_handle_t node_handle_;
+
+    // Node ID
+    uint8_t node_id_; 
 
     RxFrameBuffer* rx_pool_;
     volatile int write_idx_;

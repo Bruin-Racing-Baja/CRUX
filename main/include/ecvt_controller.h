@@ -8,22 +8,59 @@
 #include <filters/iir_filter.h>
 #include <filters/median_filter.h>
 #include <constants.h>
+#include <input_output/shift_register.h>
+#include <odrive.h> 
+#include "esp_timer.h"
+
+typedef enum {
+    NORMAL = 0, 
+    BUTTON_SHIFT = 1
+} controller_mode_t;
 
 class ECVTController {
 public:
-    ECVTController(ODrive* odrive, GearToothSensor* primary_sensor, GearToothSensor* secondary_sensor) : ecvt_odrive(odrive), primary_sensor(primary_sensor), secondary_sensor(secondary_sensor) {}
-    void start();
+    ECVTController(controller_mode_t mode_, ShiftRegister* sr, bool wait_for_can = true);
+
+    void init(bool wait_for_can=true, Telemetry* telem = nullptr);
+    bool home_actuator(uint32_t timeout_ms=5000); 
+    
+    void control_function(); 
+    void button_shift_control_function(); 
+    void normal_control_function(); 
 
 private:
+    controller_mode_t mode; 
+
+    bool get_outbound_limit(); 
+    bool get_inbound_limit(); 
+    bool get_engage_limit();
+
+    static IRAM_ATTR void primary_isr(void* p = nullptr);
+    static IRAM_ATTR void secondary_isr(void* p = nullptr);
+    static IRAM_ATTR void outbound_isr(void* p = nullptr);
+    static IRAM_ATTR void inbound_isr(void* p = nullptr);
+
+    GearToothSensor primary_gts; 
+    GearToothSensor secondary_gts; 
+
+    ODrive odrive;
+
+    ShiftRegister* shift_reg;
+    
+    Telemetry* telem;
+
+    uint64_t control_cycle_count;
+
     TaskHandle_t taskHandle;
     esp_timer_handle_t timerHandle;
-    ODrive* ecvt_odrive;
+
+    static ECVTController* instance;
+
     void control_loop();
-    Telemetry* telem;
     static void timerCallback(void* arg);
     static void taskWrapper(void* pvParameters);
-    GearToothSensor* primary_sensor;
-    GearToothSensor* secondary_sensor;
+   
+
     IIRFilter engine_rpm_rotation_filter{
         ENGINE_RPM_ROTATION_FILTER_B, ENGINE_RPM_ROTATION_FILTER_A,
         ENGINE_RPM_ROTATION_FILTER_M, ENGINE_RPM_ROTATION_FILTER_N
@@ -44,14 +81,13 @@ private:
         GEAR_RPM_TIME_FILTER_M, GEAR_RPM_TIME_FILTER_N
     };
 
-    IIRFilter throttle_filter{ // Fixed typo: throttle_fitler -> throttle_filter
+    IIRFilter throttle_filter{ 
         THROTTLE_FILTER_B, THROTTLE_FILTER_A,
         THROTTLE_FILTER_M, THROTTLE_FILTER_N
     };
 
     MedianFilter engine_rpm_median_filter{ENGINE_RPM_MEDIAN_FILTER_WINDOW};
     float last_engine_rpm_error;
-
 };
 
 #endif // ECVT_CONTROLLER_H
