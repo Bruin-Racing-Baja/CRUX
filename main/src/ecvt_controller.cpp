@@ -1,5 +1,6 @@
 #include "ecvt_controller.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 
 #include <macros.h>
 
@@ -81,17 +82,18 @@ void ECVTController::control_loop()
     float target_rpm = 3000;
     while(true)
     {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);   
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
         float primary_rpm = primary_gts.get_rpm();
         float secondary_rpm = secondary_gts.get_rpm();
         
-        primary_rpm = engine_rpm_median_filter.update(primary_rpm);
-        primary_rpm = engine_rpm_time_filter.update(primary_rpm);
+        float filtered_primary_rpm = engine_rpm_median_filter.update(primary_rpm);
+        filtered_primary_rpm = engine_rpm_time_filter.update(filtered_primary_rpm);
 
-        secondary_rpm = gear_rpm_time_filter.update(secondary_rpm);
-        secondary_rpm = secondary_rpm / GEAR_TO_SECONDARY_RATIO;
+        float filtered_secondary_rpm = gear_rpm_time_filter.update(secondary_rpm);
+        filtered_secondary_rpm = filtered_secondary_rpm / GEAR_TO_SECONDARY_RATIO;
 
-        float engine_rpm_error = primary_rpm - target_rpm;
+        float engine_rpm_error = filtered_primary_rpm - target_rpm;
         float filtered_engine_rpm_error = engine_rpm_derror_filter.update(engine_rpm_error);
 
         float engine_rpm_derror =
@@ -110,12 +112,23 @@ void ECVTController::control_loop()
         
         if(telem->lock())
         {
-            struct timeval tv_now;
-            gettimeofday(&tv_now, NULL);
-            int64_t time_us = (int64_t)tv_now.tv_sec * 1000000L + (int64_t)tv_now.tv_usec;
-            telem->data.timestamp = (float) time_us / 1e6;
-            telem->data.steer_angle = 0.0f;
-            telem->data.battery_voltage = 1.0f;
+            uint64_t time_us = esp_timer_get_time();
+            telem->data.time_ms = (float) time_us / 1e3;
+
+            telem->data.engine_rpm = primary_rpm; 
+            telem->data.secondary_rpm = secondary_rpm; 
+
+            telem->data.filtered_engine_rpm = filtered_primary_rpm;
+            telem->data.filtered_secondary_rpm = filtered_secondary_rpm;
+
+            telem->data.target_rpm = target_rpm;
+            telem->data.engine_rpm_error = engine_rpm_error; 
+
+            telem->data.velocity_command = velocity_command; 
+            
+            telem->data.inbound_limit_switch = get_inbound_limit(); 
+            telem->data.outbound_limit_switch = get_outbound_limit(); 
+            telem->data.engage_limit_switch = get_engage_limit(); 
             telem->unlock();
 
         }

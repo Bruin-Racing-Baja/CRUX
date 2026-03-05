@@ -12,17 +12,24 @@
 
 #pragma pack(push, 1)
 struct VehicleData {
-    float timestamp;
-    float steer_angle;
-    float throttle_pos;
-    float brake_pressure;
-    float wheel_speed_fl;
-    float wheel_speed_fr;
-    float wheel_speed_rl;
-    float wheel_speed_rr;
-    float battery_voltage;
-    float current_draw;
+    float time_ms;
+    float engine_count; 
+    float gear_count; 
+
+    float engine_rpm; 
+    float secondary_rpm; 
+
+    float filtered_engine_rpm; 
+    float filtered_secondary_rpm; 
+
+    float target_rpm; 
+    float engine_rpm_error; 
+
+    float velocity_command; 
     
+    float inbound_limit_switch;
+    float outbound_limit_switch; 
+    float engage_limit_switch;
 };
 #pragma pack(pop)
 
