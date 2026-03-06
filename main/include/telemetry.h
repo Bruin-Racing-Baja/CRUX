@@ -48,7 +48,7 @@ struct TelemetryPacket {
 class Telemetry {
 public:
     static void init();
-    static void send_data();
+    static void send_data(void* pvParameters = nullptr);
     static VehicleData data;
     static bool lock(TickType_t timeout_ticks = portMAX_DELAY);
     static void unlock();

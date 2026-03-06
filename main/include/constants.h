@@ -20,7 +20,7 @@ constexpr float INCH_PER_FEET = 12.0;   /* inch / feet */
 constexpr uint32_t ENGINE_SAMPLE_WINDOW = 4;
 constexpr uint32_t GEAR_SAMPLE_WINDOW = 10;
 
-constexpr float ENGINE_COUNTS_PER_ROT = 16; // count / rot
+constexpr float ENGINE_COUNTS_PER_ROT = 32; // count / rot
 constexpr float GEAR_COUNTS_PER_ROT = 6;    // count / rot
 
 constexpr float GEAR_TO_WHEEL_RATIO = 58.0 / 19.0;                

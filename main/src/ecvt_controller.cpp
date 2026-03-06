@@ -10,7 +10,7 @@ ECVTController::ECVTController(controller_mode_t mode_, ShiftRegister* sr, bool 
     : mode(mode_),
       primary_gts(ENGINE_GEARTOOTH_SENSOR_PIN, ENGINE_SAMPLE_WINDOW, ENGINE_COUNTS_PER_ROT), 
       secondary_gts(GEARBOX_GEARTOOTH_SENSOR_PIN, GEAR_SAMPLE_WINDOW, GEAR_COUNTS_PER_ROT),
-      odrive(3),
+      odrive(1),
       shift_reg(sr), 
       control_cycle_count(0)
 {
@@ -19,7 +19,10 @@ ECVTController::ECVTController(controller_mode_t mode_, ShiftRegister* sr, bool 
 
 void ECVTController::init(bool wait_for_can, Telemetry* telem) 
 {
-    this->telem = telem;
+    if(!instance) {
+        ESP_LOGE(TAG, "Instance not set");
+        return;
+    }
     pinMode(ECVT_LIMIT_SWITCH_INBOUND_PIN, PinMode::INPUT_ONLY);
     pinMode(ECVT_LIMIT_SWITCH_OUTBOUND_PIN, PinMode::INPUT_ONLY);
 
@@ -40,17 +43,18 @@ void ECVTController::init(bool wait_for_can, Telemetry* telem)
     /* Wait for CAN Heartbeat - Blinking LEDs */
     if (wait_for_can) {
         vTaskDelay(pdMS_TO_TICKS(3000));
-        ESP_LOGI(TAG, "time since heartbeat: %d", odrive.get_time_since_last_heartbeat()); 
+        //ESP_LOGI(TAG, "time since heartbeat: %d", odrive.get_time_since_last_heartbeat()); 
         bool state = true; 
         while (odrive.get_time_since_last_heartbeat() > 5e5) {
             shift_reg->write_all_leds(state);
             vTaskDelay(pdMS_TO_TICKS(100));
             state = !state;
         }
-        ESP_LOGI(TAG, "time since heartbeat: %d", odrive.get_time_since_last_heartbeat());
+        //ESP_LOGI(TAG, "time since heartbeat: %d", odrive.get_time_since_last_heartbeat());
     }
     shift_reg->write_all_leds(false);
 
+    //ESP_LOGI(TAG, "Start Homing");
     bool homed = home_actuator(); 
     if (homed) {
         ESP_LOGI(TAG, "Actuator Homed!");
@@ -76,7 +80,7 @@ void ECVTController::taskWrapper(void* pvParameters) {
 }
 void ECVTController::control_loop()
 {
-    ESP_LOGI(TAG, "Start");
+    //ESP_LOGI(TAG, "Start");
     uint8_t node_id = 3;
     float dt_s = CONTROL_FUNCTION_INTERVAL_MS * SECONDS_PER_MS;
     float target_rpm = 3000;
@@ -107,29 +111,32 @@ void ECVTController::control_loop()
         velocity_command = CLAMP(velocity_command, -10.f, 10.f);
         odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
         odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_VEL_RAMP);
+        //ESP_LOGI(TAG, "Velocity Command %.2f, Geartooth rpm %.2f, Secondary rpm %.2f", velocity_command, primary_rpm, secondary_rpm);
+        //ESP_LOGI(TAG, "Gear Count Primary: %d", primary_gts.get_count());
         if(!(get_outbound_limit() && velocity_command > 0) && !(get_inbound_limit() && velocity_command < 0)) //Check signs on this
             odrive.set_input_vel(velocity_command, 0.0f);
         
-        if(telem->lock())
+        if(true)
         {
             uint64_t time_us = esp_timer_get_time();
-            telem->data.time_ms = (float) time_us / 1e3;
+            Telemetry::data.time_ms = (float) time_us / 1e3;
 
-            telem->data.engine_rpm = primary_rpm; 
-            telem->data.secondary_rpm = secondary_rpm; 
+            Telemetry::data.engine_rpm = primary_rpm;
+            //ESP_LOGI(TAG, "Engine RPM %.2f", Telemetry::data.engine_rpm); 
+            Telemetry::data.secondary_rpm = secondary_rpm; 
 
-            telem->data.filtered_engine_rpm = filtered_primary_rpm;
-            telem->data.filtered_secondary_rpm = filtered_secondary_rpm;
+            Telemetry::data.filtered_engine_rpm = filtered_primary_rpm;
+            Telemetry::data.filtered_secondary_rpm = filtered_secondary_rpm;
 
-            telem->data.target_rpm = target_rpm;
-            telem->data.engine_rpm_error = engine_rpm_error; 
+            Telemetry::data.target_rpm = target_rpm;
+            Telemetry::data.engine_rpm_error = engine_rpm_error; 
 
-            telem->data.velocity_command = velocity_command; 
+            Telemetry::data.velocity_command = velocity_command; 
             
-            telem->data.inbound_limit_switch = get_inbound_limit(); 
-            telem->data.outbound_limit_switch = get_outbound_limit(); 
-            telem->data.engage_limit_switch = get_engage_limit(); 
-            telem->unlock();
+            Telemetry::data.inbound_limit_switch = get_inbound_limit(); 
+            Telemetry::data.outbound_limit_switch = get_outbound_limit(); 
+            Telemetry::data.engage_limit_switch = get_engage_limit(); 
+            //Telemetry::unlock();
 
         }
         control_cycle_count++;
@@ -147,7 +154,7 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
     uint32_t start_time_ms = esp_timer_get_time() / 1e3;
     while(!get_outbound_limit()) {
         odrive.set_input_vel(-4.0);
-        if ((esp_timer_get_time() - start_time_ms) > timeout_ms) {
+        if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
             odrive.set_input_vel(0.0);
             return false;
         }
@@ -158,7 +165,7 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
     start_time_ms = esp_timer_get_time() / 1e3;
     while(!get_engage_limit()) {
         odrive.set_input_vel(4.0);
-        if ((esp_timer_get_time() - start_time_ms) > timeout_ms) {
+        if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
             odrive.set_input_vel(0.0);
             return false;
         }
