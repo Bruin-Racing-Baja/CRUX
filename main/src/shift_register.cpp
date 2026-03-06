@@ -42,3 +42,14 @@ bool ShiftRegister::write_led(uint8_t led_num, bool value) {
     write_byte((data & ~(1u<<led_num)) | (value<<led_num)); // replaces n-th bit with value and writes to register
     return true;
 }
+
+void ShiftRegister::write_all_leds(bool value) {
+    uint8_t mask; 
+    if (value) {
+        mask = 0b11111111; 
+    } else {
+        mask = 0; 
+    }
+
+    write_byte(mask);
+}
