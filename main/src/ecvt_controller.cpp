@@ -108,13 +108,13 @@ void ECVTController::control_loop()
         float velocity_command =
             (engine_rpm_error * ACTUATOR_KP +
             MAX(0, engine_rpm_derror * ACTUATOR_KD));
-        velocity_command = CLAMP(velocity_command, -10.f, 10.f);
+        velocity_command = CLAMP(velocity_command, -VELOCITY_LIMIT, VELOCITY_LIMIT);
         odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
         odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_VEL_RAMP);
         //ESP_LOGI(TAG, "Velocity Command %.2f, Geartooth rpm %.2f, Secondary rpm %.2f", velocity_command, primary_rpm, secondary_rpm);
         //ESP_LOGI(TAG, "Gear Count Primary: %d", primary_gts.get_count());
         if(!(get_outbound_limit() && velocity_command > 0) && !(get_inbound_limit() && velocity_command < 0)) //Check signs on this
-            odrive.set_input_vel(velocity_command, 0.0f);
+            odrive.set_input_vel(velocity_command * ECVT_DIR, 0.0f);
         
         if(true)
         {
@@ -153,7 +153,7 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
     /* Shift out to outbound LS */
     uint32_t start_time_ms = esp_timer_get_time() / 1e3;
     while(!get_outbound_limit()) {
-        odrive.set_input_vel(-4.0);
+        odrive.set_input_vel(-4.0 * ECVT_DIR);
         if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
             odrive.set_input_vel(0.0);
             return false;
@@ -164,7 +164,7 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
     /* Shift in to inbound LS */
     start_time_ms = esp_timer_get_time() / 1e3;
     while(!get_engage_limit()) {
-        odrive.set_input_vel(4.0);
+        odrive.set_input_vel(4.0 * ECVT_DIR);
         if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
             odrive.set_input_vel(0.0);
             return false;
@@ -193,7 +193,7 @@ void ECVTController::button_shift_control_function() {
     bool button_3_pressed = digitalRead(BUTTON_3_PIN);
     bool button_4_pressed = digitalRead(BUTTON_4_PIN);
 
-    float velocity = 10.0; 
+    float velocity = 10.0 * ECVT_DIR; 
     if (button_1_pressed) {
         odrive.set_axis_state(AXIS_STATE_IDLE); 
     } else if (button_2_pressed) {
