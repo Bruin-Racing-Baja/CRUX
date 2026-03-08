@@ -9,6 +9,7 @@
 #include <cstring>
 #include "driver/uart.h"
 #include "driver/gpio.h"
+#include <atomic>
 
 #pragma pack(push, 1)
 struct VehicleData {
@@ -49,7 +50,9 @@ class Telemetry {
 public:
     static void init();
     static void send_data(void* pvParameters = nullptr);
-    static VehicleData data;
+    static VehicleData buffer_a, buffer_b;
+    static VehicleData* back_buffer;
+    static std::atomic<VehicleData*> front_buffer;
     static bool lock(TickType_t timeout_ticks = portMAX_DELAY);
     static void unlock();
     
