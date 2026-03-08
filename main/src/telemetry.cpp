@@ -1,7 +1,9 @@
 #include "telemetry.h"
 #include "driver/usb_serial_jtag.h"
 #include "esp_log.h"
-VehicleData Telemetry::data;
+static const char* TAG = "ODrive";
+
+VehicleData Telemetry::data = {0};
 SemaphoreHandle_t Telemetry::data_mutex;
 
 int Telemetry::sequence_number = 0;
@@ -28,19 +30,24 @@ void Telemetry::unlock() {
     xSemaphoreGive(data_mutex);
 } 
 
-void Telemetry::send_data() {
+void Telemetry::send_data(void* pvParameters) {
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    const TickType_t xFrequency = pdMS_TO_TICKS(100); // 100ms period
+    for(;;){
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+        
+        TelemetryPacket packet;
+        packet.start_byte_1 = 0xFA;
+        packet.start_byte_2 = 0xCE;
+        packet.packet_type = 0x01; 
+        packet.sequence_number = Telemetry::sequence_number++;
+        
+        //lock();
+        memcpy(&packet.payload, &Telemetry::data, sizeof(VehicleData));
+       // unlock();
 
-    TelemetryPacket packet;
-    packet.start_byte_1 = 0xFA;
-    packet.start_byte_2 = 0xCE;
-    packet.packet_type = 0x01; 
-    packet.sequence_number = Telemetry::sequence_number++;
+        packet.checksum = esp_rom_crc32_le(0, (uint8_t*)&packet, sizeof(TelemetryPacket) - sizeof(packet.checksum));
 
-    lock();
-    memcpy(&packet.payload, &Telemetry::data, sizeof(VehicleData));
-    unlock();
-
-    packet.checksum = esp_rom_crc32_le(0, (uint8_t*)&packet, sizeof(TelemetryPacket) - sizeof(packet.checksum));
-
-    usb_serial_jtag_write_bytes(&packet, sizeof(TelemetryPacket), pdMS_TO_TICKS(100));
+        usb_serial_jtag_write_bytes(&packet, sizeof(TelemetryPacket), pdMS_TO_TICKS(100));
+    }
 }

@@ -10,6 +10,7 @@ public:
                   uint32_t reg_clk_pin_);
     
     bool write_led(uint8_t led_num, bool value);
+    void write_all_leds(bool value); 
 
     uint8_t get_current_state() const {return data;} 
     
