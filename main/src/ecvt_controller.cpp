@@ -116,29 +116,30 @@ void ECVTController::control_loop()
         if(!(get_outbound_limit() && velocity_command > 0) && !(get_inbound_limit() && velocity_command < 0)) //Check signs on this
             odrive.set_input_vel(velocity_command * ECVT_DIR, 0.0f);
         
-        if(true)
-        {
-            uint64_t time_us = esp_timer_get_time();
-            Telemetry::data.time_ms = (float) time_us / 1e3;
+        
+        uint64_t time_us = esp_timer_get_time();
+        Telemetry::back_buffer->time_ms = (float) time_us / 1e3;
 
-            Telemetry::data.engine_rpm = primary_rpm;
-            //ESP_LOGI(TAG, "Engine RPM %.2f", Telemetry::data.engine_rpm); 
-            Telemetry::data.secondary_rpm = secondary_rpm; 
+        Telemetry::back_buffer->engine_rpm = primary_rpm;
+        //ESP_LOGI(TAG, "Engine RPM %.2f", Telemetry::back_buffer->engine_rpm); 
+        Telemetry::back_buffer->secondary_rpm = secondary_rpm; 
 
-            Telemetry::data.filtered_engine_rpm = filtered_primary_rpm;
-            Telemetry::data.filtered_secondary_rpm = filtered_secondary_rpm;
+        Telemetry::back_buffer->filtered_engine_rpm = filtered_primary_rpm;
+        Telemetry::back_buffer->filtered_secondary_rpm = filtered_secondary_rpm;
 
-            Telemetry::data.target_rpm = target_rpm;
-            Telemetry::data.engine_rpm_error = engine_rpm_error; 
+        Telemetry::back_buffer->target_rpm = target_rpm;
+        Telemetry::back_buffer->engine_rpm_error = engine_rpm_error; 
 
-            Telemetry::data.velocity_command = velocity_command; 
-            
-            Telemetry::data.inbound_limit_switch = get_inbound_limit(); 
-            Telemetry::data.outbound_limit_switch = get_outbound_limit(); 
-            Telemetry::data.engage_limit_switch = get_engage_limit(); 
-            //Telemetry::unlock();
+        Telemetry::back_buffer->velocity_command = velocity_command; 
+        
+        Telemetry::back_buffer->inbound_limit_switch = get_inbound_limit(); 
+        Telemetry::back_buffer->outbound_limit_switch = get_outbound_limit(); 
+        Telemetry::back_buffer->engage_limit_switch = get_engage_limit(); 
+        
+        Telemetry::back_buffer = Telemetry::front_buffer.exchange(Telemetry::back_buffer);
+        //Telemetry::unlock();
 
-        }
+        
         control_cycle_count++;
     }
 }
