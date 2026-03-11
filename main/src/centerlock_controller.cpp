@@ -1,7 +1,6 @@
 #include <centerlock_controller.h>
 #include <constants.h>
 #include <odrive.h>
-#include <types.h>
 #include <macros.h>
 
 uint32_t out_pin_ =  1;
@@ -9,13 +8,13 @@ uint32_t in_pin_ = 2;
 
 // make centerlock controller - has limit switch implemented 
 
-Centerlock_controller::Centerlock_controller(ODrive *odrive) : odrive(odrive), curr_state(UNHOMED), centerlocklimitswitch(OUT_PIN, IN_PIN), num_tries(0), cycles_since_stopped(0) {}
+centerlock_controller::Centerlock_controller(ODrive *odrive) : odrive(odrive), curr_state(UNHOMED), centerlocklimitswitch(OUT_PIN, IN_PIN), num_tries(0), cycles_since_stopped(0) {}
 
 // Call homing sequence when first turned on -  if fully shifted in leave in 4 or shift out 
-u8 Centerlock_controller::home(u32 timeout_ms){
+void centerlock_controller::home(uint32_t timeout_ms){
 
     // push all the way out 
-    if(odrive->set_axis_state(ODrive::AXIS_STATE_CLOSED_LOOP_CONTROL)){
+    if(ODrive->set_axis_state(ODrive::AXIS_STATE_CLOSED_LOOP_CONTROL)){
         return HOME_CAN_ERROR;
     }
 
@@ -30,7 +29,7 @@ u8 Centerlock_controller::home(u32 timeout_ms){
 }   
 
 // Call centerlock controller
-u8 Centerlock_controller::control(u32 timeout_ms, bool req_4wd, bool req_2wd) {
+void centerlock_controller::control(uint32_t timeout_ms, bool req_4wd, bool req_2wd) {
 
 //     // protect the buttons 
 //     if(req_4wd && req_2wd){
@@ -39,10 +38,10 @@ u8 Centerlock_controller::control(u32 timeout_ms, bool req_4wd, bool req_2wd) {
 // }
 
     // initialize the switches / controller
-    u32 now = millis();
+    uint32_t now = millis();
     if(centerlocklimitswitch.is_inbound() && centerlocklimitswitch.is_outbound()){
     curr_state = ERROR;
-    odrive.set_velocity(0);
+    ODrive.set_velocity(0);
 }
     switch(curr_state) {
 
@@ -107,14 +106,14 @@ u8 Centerlock_controller::control(u32 timeout_ms, bool req_4wd, bool req_2wd) {
     return CONTROL_RUNNING;
 }
 
-u8 Centerlock_controller::get_State(){
+void centerlock_controller::get_State(){
     return curr_state;
 }
 
 
-u8 Centerlock_controller::set_velocity(float velocity) {
-  if (odrive->get_axis_state() == ODrive::AXIS_STATE_IDLE) {
-    odrive->set_axis_state(ODrive::AXIS_STATE_CLOSED_LOOP_CONTROL);
+void centerlock_controller::set_velocity(float velocity) {
+  if (ODrive->get_axis_state() == ODrive::AXIS_STATE_IDLE) {
+    ODrive->set_axis_state(ODrive::AXIS_STATE_CLOSED_LOOP_CONTROL);
   }
 
 // add if using more than just velocity controller
@@ -124,13 +123,13 @@ u8 Centerlock_controller::set_velocity(float velocity) {
 //   }
 
   velocity = CLAMP(velocity, -ODRIVE_VEL_LIMIT, ODRIVE_VEL_LIMIT);
-  if (odrive->set_input_vel(velocity, 0) != 0) {
+  if (ODrive->set_input_vel(velocity, 0) != 0) {
     return SET_VELOCITY_CAN_ERROR;
   }
 
   return SET_VELOCITY_SUCCCESS;
 }
-bool Centerlock_controller::get_outbound_limit() {
+bool centerlock_controller::get_outbound_limit() {
   return !digitalRead(ECENTERLOCK_SENSOR_PIN);
 
 }
