@@ -4,7 +4,6 @@
 #include <types.h>
 #include <macros.h>
 
-
 uint32_t out_pin_ =  1;
 uint32_t in_pin_ = 2;
 
@@ -12,7 +11,7 @@ uint32_t in_pin_ = 2;
 
 Centerlock_controller::Centerlock_controller(ODrive *odrive) : odrive(odrive), curr_state(UNHOMED), centerlocklimitswitch(OUT_PIN, IN_PIN), num_tries(0), cycles_since_stopped(0) {}
 
-// Call homing sequence when first turned on
+// Call homing sequence when first turned on -  if fully shifted in leave in 4 or shift out 
 u8 Centerlock_controller::home(u32 timeout_ms){
 
     // push all the way out 
@@ -33,17 +32,17 @@ u8 Centerlock_controller::home(u32 timeout_ms){
 // Call centerlock controller
 u8 Centerlock_controller::control(u32 timeout_ms, bool req_4wd, bool req_2wd) {
 
-    // protect the buttons 
-    if(req_4wd && req_2wd){
-    set_velocity(0);
-    return CONTROL_IDLE;
-}
+//     // protect the buttons 
+//     if(req_4wd && req_2wd){
+//     set_velocity(0);
+//     return CONTROL_IDLE;
+// }
+
     // initialize the switches / controller
     u32 now = millis();
     if(centerlocklimitswitch.is_inbound() && centerlocklimitswitch.is_outbound()){
     curr_state = ERROR;
-    set_velocity(0);
-    return CONTROL_ERROR;
+    odrive.set_velocity(0);
 }
     switch(curr_state) {
 
@@ -61,7 +60,6 @@ u8 Centerlock_controller::control(u32 timeout_ms, bool req_4wd, bool req_2wd) {
         } 
         else if(now - start_time > timeout_ms){
             curr_state = ERROR;
-            return CONTROL_TIMEOUT;
         }
         break;
 
@@ -80,7 +78,6 @@ u8 Centerlock_controller::control(u32 timeout_ms, bool req_4wd, bool req_2wd) {
         } 
         else if(now - start_time > timeout_ms){
             curr_state = ERROR;
-            return CONTROL_TIMEOUT;
         }
         break;
 
@@ -107,11 +104,8 @@ u8 Centerlock_controller::control(u32 timeout_ms, bool req_4wd, bool req_2wd) {
         set_velocity(0);
         return CONTROL_ERROR;
     }
-
     return CONTROL_RUNNING;
 }
-
-
 
 u8 Centerlock_controller::get_State(){
     return curr_state;
@@ -138,5 +132,5 @@ u8 Centerlock_controller::set_velocity(float velocity) {
 }
 bool Centerlock_controller::get_outbound_limit() {
   return !digitalRead(ECENTERLOCK_SENSOR_PIN);
-}
 
+}

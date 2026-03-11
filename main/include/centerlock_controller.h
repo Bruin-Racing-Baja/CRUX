@@ -1,10 +1,9 @@
 #ifndef CENTERLOCK_CONTROLLER_H
 #define CENTERLOCK_CONTROLLER_H
 
-#include <Arduino.h>
 #include <constants.h>
-#include <odrive.h>
-#include <types.h>
+#include odrive.h
+#include constants.h
 
 // test out git process
 
