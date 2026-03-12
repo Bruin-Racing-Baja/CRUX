@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <cstdint>
 #include <macros.h>
+#include "driver/gpio.h"
 /* Units */
 constexpr float SECONDS_PER_MINUTE = 60.0; /* s / min */
 constexpr float MS_PER_SECOND = 1.0e3;     /* ms / s */ 
@@ -64,6 +65,12 @@ constexpr gpio_num_t BUTTON_1_PIN = GPIO_NUM_43;
 constexpr gpio_num_t EXTRA_IO_2_PIN = GPIO_NUM_45; 
 constexpr gpio_num_t EXTRA_IO_1_PIN = GPIO_NUM_46; 
 constexpr gpio_num_t EXTRA_GTS_PIN = GPIO_NUM_3; 
+
+constexpr float ODRIVE_VEL_LIMIT = 10; 
+
+constexpr float CENTERLOCK_HOME_VEL = 2; 
+constexpr float CENTERLOCK_VEL = 4; 
+constexpr float CENTERLOCK_DIR = 1; 
 
 /* DAQ Pinouts */
 constexpr int DAQ_LED_1_PIN = 21; 
