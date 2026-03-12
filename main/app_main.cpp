@@ -19,6 +19,7 @@
 #include <odrive.h>
 #include <telemetry.h>
 #include <ecvt_controller.h>
+#include <centerlock_controller.h>
 
 #include <sensors/gear_tooth_sensor.h>
 #include <sensors/brake_pot_sensor.h>
@@ -36,7 +37,8 @@ controller_mode_t ecvt_mode = NORMAL;
 /* Globally Defined For Now */
 CenterlockLimitSwitch centerlock_ls(CENTERLOCK_LIMIT_SWITCH_OUTBOUND_PIN, CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN); 
 ShiftRegister shift_reg(SR_SER_IN_PIN, SR_SHIFT_REG_CLK_PIN, SR_REG_CLK_PIN); 
-ECVTController ecvt_controller(ecvt_mode, &shift_reg);
+// ECVTController ecvt_controller(ecvt_mode, &shift_reg);
+CenterlockController centerlock_controller(&shift_reg, CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN, CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN); 
 
 // ODrive odrive(4); 
 Button button_1(BUTTON_1_PIN);
@@ -67,8 +69,9 @@ extern "C" void app_main(void)
     Telemetry::init();
 
     vTaskDelay(pdMS_TO_TICKS(500));
-    xTaskCreatePinnedToCore(Telemetry::send_data, "telemetry_task", 4096,  nullptr, tskIDLE_PRIORITY + 5, NULL, 0);
-    ecvt_controller.init(true);
+    // xTaskCreatePinnedToCore(Telemetry::send_data, "telemetry_task", 4096,  nullptr, tskIDLE_PRIORITY + 5, NULL, 0);
+    // ecvt_controller.init(true);
+    centerlock_controller.init();
 
     while(true)
     {
