@@ -81,9 +81,7 @@ void ECVTController::taskWrapper(void* pvParameters) {
 void ECVTController::control_loop()
 {
     //ESP_LOGI(TAG, "Start");
-    uint8_t node_id = 3;
     float dt_s = CONTROL_FUNCTION_INTERVAL_MS * SECONDS_PER_MS;
-    float target_rpm = 3000;
     while(true)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -97,7 +95,7 @@ void ECVTController::control_loop()
         float filtered_secondary_rpm = gear_rpm_time_filter.update(secondary_rpm);
         filtered_secondary_rpm = filtered_secondary_rpm / GEAR_TO_SECONDARY_RATIO;
 
-        float engine_rpm_error = filtered_primary_rpm - target_rpm;
+        float engine_rpm_error = filtered_primary_rpm - ECVT_TARGET_RPM;
         float filtered_engine_rpm_error = engine_rpm_derror_filter.update(engine_rpm_error);
 
         float engine_rpm_derror =
@@ -127,7 +125,7 @@ void ECVTController::control_loop()
         Telemetry::back_buffer->filtered_engine_rpm = filtered_primary_rpm;
         Telemetry::back_buffer->filtered_secondary_rpm = filtered_secondary_rpm;
 
-        Telemetry::back_buffer->target_rpm = target_rpm;
+        Telemetry::back_buffer->target_rpm = ECVT_TARGET_RPM;
         Telemetry::back_buffer->engine_rpm_error = engine_rpm_error; 
 
         Telemetry::back_buffer->velocity_command = velocity_command; 
@@ -137,9 +135,7 @@ void ECVTController::control_loop()
         Telemetry::back_buffer->engage_limit_switch = get_engage_limit(); 
         
         Telemetry::back_buffer = Telemetry::front_buffer.exchange(Telemetry::back_buffer);
-        //Telemetry::unlock();
 
-        
         control_cycle_count++;
     }
 }
@@ -154,7 +150,7 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
     /* Shift out to outbound LS */
     uint32_t start_time_ms = esp_timer_get_time() / 1e3;
     while(!get_outbound_limit()) {
-        odrive.set_input_vel(-4.0 * ECVT_DIR);
+        odrive.set_input_vel(-ECVT_HOME_SPEED * ECVT_DIR);
         if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
             odrive.set_input_vel(0.0);
             return false;
@@ -165,7 +161,7 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
     /* Shift in to inbound LS */
     start_time_ms = esp_timer_get_time() / 1e3;
     while(!get_engage_limit()) {
-        odrive.set_input_vel(4.0 * ECVT_DIR);
+        odrive.set_input_vel(ECVT_HOME_SPEED * ECVT_DIR);
         if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
             odrive.set_input_vel(0.0);
             return false;
