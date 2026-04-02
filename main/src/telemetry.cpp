@@ -3,7 +3,10 @@
 #include "esp_log.h"
 static const char* TAG = "ODrive";
 
-VehicleData Telemetry::data = {0};
+VehicleData Telemetry::buffer_a = {0};
+VehicleData Telemetry::buffer_b = {0};
+VehicleData* Telemetry::back_buffer = &Telemetry::buffer_a;
+std::atomic<VehicleData*> Telemetry::front_buffer{&Telemetry::buffer_b};
 SemaphoreHandle_t Telemetry::data_mutex;
 
 int Telemetry::sequence_number = 0;
@@ -32,10 +35,14 @@ void Telemetry::unlock() {
 
 void Telemetry::send_data(void* pvParameters) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    const TickType_t xFrequency = pdMS_TO_TICKS(100); // 100ms period
+    const TickType_t xFrequency = pdMS_TO_TICKS(10); // 100ms period
+    
     for(;;){
-        vTaskDelayUntil(&xLastWakeTime, xFrequency);
         
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+        if(Telemetry::front_buffer.load() == nullptr) {
+            continue;
+        }
         TelemetryPacket packet;
         packet.start_byte_1 = 0xFA;
         packet.start_byte_2 = 0xCE;
@@ -43,7 +50,7 @@ void Telemetry::send_data(void* pvParameters) {
         packet.sequence_number = Telemetry::sequence_number++;
         
         //lock();
-        memcpy(&packet.payload, &Telemetry::data, sizeof(VehicleData));
+        memcpy(&packet.payload, Telemetry::front_buffer.load(), sizeof(VehicleData));
        // unlock();
 
         packet.checksum = esp_rom_crc32_le(0, (uint8_t*)&packet, sizeof(TelemetryPacket) - sizeof(packet.checksum));
