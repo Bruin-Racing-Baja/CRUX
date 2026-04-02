@@ -9,7 +9,6 @@ ODrive::ODrive(uint8_t node_id)
     :  last_heartbeat_us(0)
     , tx_pin_(GPIO_NUM_NC)
     , rx_pin_(GPIO_NUM_NC)
-    , bitrate_(250000)
     , rx_buffer_depth_(64)
     , node_handle_(nullptr)
     , node_id_(node_id)
@@ -68,7 +67,7 @@ bool ODrive::init(gpio_num_t tx_pin, gpio_num_t rx_pin, uint32_t bitrate)
             .bitrate = bitrate,
         },
         .fail_retry_cnt = 3,
-        .tx_queue_depth = 10,
+        .tx_queue_depth = TX_QUEUE_DEPTH,
         .flags = {
             .enable_self_test = false,
             .enable_loopback = false,
@@ -268,7 +267,6 @@ uint32_t ODrive::build_can_id(uint16_t cmd_id)
 
 void ODrive::send_can_msg(uint32_t can_id, const uint8_t* data, uint8_t len, bool remote)
 {
-    
     CanMessage msg = {};
     msg.id = can_id;
     msg.len = len;
@@ -424,7 +422,6 @@ void ODrive::process_msg(const twai_frame_t& msg)
     /*
     ESP_LOGI(TAG, "RX: %x [%d] %x %x %x %x", \
                   msg.header.id, msg.header.dlc, msg.buffer[0], msg.buffer[1], msg.buffer[2], msg.buffer[3]);
-   
    */              
     switch (cmd_id) {
         case CAN_HEARTBEAT:
@@ -456,7 +453,6 @@ void ODrive::parse_heartbeat(const uint8_t* data, uint8_t len)
     memcpy(&error, &data[0], 4);
     state = data[4];
     // data[5-7] contain procedure result and trajectory done flag
-    
     if (heartbeat_cb_) {
         heartbeat_cb_(error, state, heartbeat_ctx_);
     }

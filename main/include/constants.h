@@ -4,17 +4,17 @@
 #include <cstdint>
 #include <macros.h>
 /* Units */
-constexpr float SECONDS_PER_MINUTE = 60.0; /* s / min */
+constexpr float SECONDS_PER_MINUTE = 60.0f; /* s / min */
 constexpr float MS_PER_SECOND = 1.0e3;     /* ms / s */ 
 constexpr float US_PER_SECOND = 1.0e6;     /* us / s */
 constexpr float SECONDS_PER_MS = 1.0e-3;   /* s / ms */
 constexpr float SECONDS_PER_US = 1.0e-6;   /* s / us */
 
-constexpr float MM_PER_INCH = 25.4;              /* mm / inch */
-constexpr float INCHES_PER_MM = 1 / MM_PER_INCH; /* inch / mm */
+constexpr float MM_PER_INCH = 25.4f;              /* mm / inch */
+constexpr float INCHES_PER_MM = 1.0f / MM_PER_INCH; /* inch / mm */
 
-constexpr float FEET_PER_MILE = 5280.0; /* feet / mile */
-constexpr float INCH_PER_FEET = 12.0;   /* inch / feet */
+constexpr float FEET_PER_MILE = 5280.0f; /* feet / mile */
+constexpr float INCH_PER_FEET = 12.0f;   /* inch / feet */
 
 // Powertrain
 constexpr uint32_t ENGINE_SAMPLE_WINDOW = 4;
@@ -23,8 +23,12 @@ constexpr uint32_t GEAR_SAMPLE_WINDOW = 10;
 constexpr float ENGINE_COUNTS_PER_ROT = 32; // count / rot
 constexpr float GEAR_COUNTS_PER_ROT = 6;    // count / rot
 
-constexpr float GEAR_TO_WHEEL_RATIO = 58.0 / 19.0;                
-constexpr float GEAR_TO_SECONDARY_RATIO = 17.0 / 50.0;
+constexpr float GEAR_TO_WHEEL_RATIO = 58.0f / 19.0f;                
+constexpr float GEAR_TO_SECONDARY_RATIO = 17.0f / 50.0f;
+
+constexpr float VELOCITY_LIMIT = 10.0f;
+constexpr float ECVT_HOME_SPEED = 4.0f;
+constexpr int ECVT_DIR = 1.0;
 
 constexpr uint32_t CONTROL_FUNCTION_INTERVAL_MS = 10;
 
@@ -109,8 +113,10 @@ constexpr float THROTTLE_FILTER_A[] = {1., -0.88161859};
 constexpr size_t THROTTLE_FILTER_M = COUNT_OF(THROTTLE_FILTER_B);
 constexpr size_t THROTTLE_FILTER_N = COUNT_OF(THROTTLE_FILTER_A);
 
-constexpr float ACTUATOR_KP = 0.03;   
-constexpr float ACTUATOR_KI = 0.000;   
-constexpr float ACTUATOR_KD = 0.000;
+constexpr float ACTUATOR_KP = 0.03f;   
+constexpr float ACTUATOR_KI = 0.000f;   
+constexpr float ACTUATOR_KD = 0.000f;
+
+constexpr float ECVT_TARGET_RPM = 3000.0f;
 
 #endif // CONSTANTS_H
