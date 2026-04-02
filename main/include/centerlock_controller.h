@@ -32,7 +32,7 @@ public:
     static const uint32_t HOME_CAN_ERROR = 1;
     static const uint32_t HOME_TIMEOUT_ERROR = 2;
 
-    CenterlockController(ShiftRegister* sr_, gpio_num_t outbound_pin_, gpio_num_t inbound_pin_);
+    CenterlockController(gpio_num_t outbound_pin_, gpio_num_t inbound_pin_, gpio_num_t cl_led_);
     void init();
     bool home(); 
 
@@ -52,13 +52,14 @@ private:
 
     static CenterlockController* instance;
 
-    ODrive odrive; 
-    ShiftRegister* shift_reg; 
+    ODrive odrive;  
     
     State curr_state;
     
     gpio_num_t outbound_pin; 
     gpio_num_t inbound_pin; 
+
+    gpio_num_t led; 
 
     TaskHandle_t taskHandle;
     esp_timer_handle_t timerHandle;

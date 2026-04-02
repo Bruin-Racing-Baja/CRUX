@@ -3,23 +3,19 @@
 #include <odrive.h>
 #include <macros.h>
 #include <gpio_wrapper.h>
-#include <input_output/shift_register.h>
 #include "esp_log.h"
 #include "esp_timer.h"
-
-uint32_t out_pin_ =  1;
-uint32_t in_pin_ = 2;
 
 static const char *TAG = "centerlock";
 
 // make centerlock controller - has limit switch implemented 
 CenterlockController* CenterlockController::instance = nullptr;
-CenterlockController::CenterlockController(ShiftRegister* sr_, gpio_num_t outbound_pin_, gpio_num_t inbound_pin_) : 
-odrive(3), 
-shift_reg(sr_),
+CenterlockController::CenterlockController(gpio_num_t outbound_pin_, gpio_num_t inbound_pin_, gpio_num_t cl_led_) :
+odrive(CENTERLOCK_ODRIVE_NODE_ID), 
 curr_state(UNHOMED), 
 outbound_pin(outbound_pin_), 
 inbound_pin(inbound_pin_),
+led(cl_led_),
 shift_start_time_ms(0)
 {
     instance = this;
@@ -34,28 +30,27 @@ void CenterlockController::init()
 
     pinMode(CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN, PinMode::INPUT_PULLUP);
     pinMode(CENTERLOCK_LIMIT_SWITCH_OUTBOUND_PIN, PinMode::INPUT_PULLUP);
+    pinMode(led, PinMode::OUTPUT_ONLY);
 
     odrive.init(CAN_TX_PIN, CAN_RX_PIN, CAN_BITRATE);
     odrive.start();
     odrive.set_limits(CENTERLOCK_ODRIVE_VEL_LIMIT, CENTERLOCK_ODRIVE_CURRENT_LIMIT);
 
-    shift_reg->write_all_leds(true);
+    digitalWrite(led, HIGH);
     vTaskDelay(pdMS_TO_TICKS(2000));
-    shift_reg->write_all_leds(false);
+    digitalWrite(led, LOW);
 
     /* Wait for CAN Heartbeat - Blinking LEDs */
     if (wait_for_can) {
         vTaskDelay(pdMS_TO_TICKS(3000));
-        //ESP_LOGI(TAG, "time since heartbeat: %d", odrive.get_time_since_last_heartbeat()); 
-        bool state = true; 
+        bool state = HIGH; 
         while (odrive.get_time_since_last_heartbeat() > 5e5) {
-            shift_reg->write_all_leds(state);
+            digitalWrite(led, state);
             vTaskDelay(pdMS_TO_TICKS(100));
             state = !state;
         }
-        //ESP_LOGI(TAG, "time since heartbeat: %d", odrive.get_time_since_last_heartbeat());
     }
-    shift_reg->write_all_leds(false);
+    digitalWrite(led, HIGH);
 
     ESP_LOGI(TAG, "Start Homing");
     bool homed = home(); 
@@ -80,7 +75,7 @@ void CenterlockController::init()
 // Call homing sequence when first turned on -  if fully shifted in leave in 4 or shift out 
 bool CenterlockController::home()
 {
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
     // push all the way out 
     odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);  
@@ -103,6 +98,7 @@ bool CenterlockController::home()
     curr_state = DISENGAGED_2WD;
 
     ESP_LOGI(TAG, "HOMED");
+    digitalWrite(led, LOW);
 
     return true;
 }   
@@ -129,10 +125,6 @@ void CenterlockController::control_loop()
 
             case DISENGAGED_2WD:
                 ESP_LOGI(TAG, "DISENGAGED_2WD");
-                // if(req_4wd){
-                //     curr_state = SHIFTING_TO_4WD;
-                //     set_velocity(ECENTERLOCK_4WD_VEL);
-                // }o
                 break;
 
             case SHIFTING_TO_4WD:
@@ -151,10 +143,6 @@ void CenterlockController::control_loop()
 
             case ENGAGED_4WD:
                 ESP_LOGI(TAG, "ENGAGED_4WD");
-                // if(req_2wd){
-                //     curr_state = SHIFTING_TO_2WD;
-                //     set_velocity(ECENTERLOCK_2WD_VEL);
-                // }
                 break;
 
             case SHIFTING_TO_2WD:
@@ -213,23 +201,3 @@ void IRAM_ATTR CenterlockController::shift_out_button_isr(void* p) {
         }
     }
 }
-
-
-// void CenterlockController::set_velocity(float velocity) {
-//   if (ODrive->get_axis_state() == AXIS_STATE_IDLE) {
-//     ODrive->set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
-//   }
-
-// // add if using more than just velocity controller
-// //   if (odrive->set_controller_mode(ODrive::CONTROL_MODE_VELOCITY_CONTROL,
-// //                                   ODrive::INPUT_MODE_VEL_RAMP) != 0) {
-// //     return SET_VELOCITY_CAN_ERROR;
-// //   }
-
-//   velocity = CLAMP(velocity, -ODRIVE_VEL_LIMIT, ODRIVE_VEL_LIMIT);
-//   if (ODrive->set_input_vel(velocity, 0) != 0) {
-//     return SET_VELOCITY_CAN_ERROR;
-//   }
-
-//   return SET_VELOCITY_SUCCCESS;
-// }

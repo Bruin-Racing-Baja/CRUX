@@ -10,7 +10,7 @@ ECVTController::ECVTController(controller_mode_t mode_, ShiftRegister* sr, bool 
     : mode(mode_),
       primary_gts(ENGINE_GEARTOOTH_SENSOR_PIN, ENGINE_SAMPLE_WINDOW, ENGINE_COUNTS_PER_ROT), 
       secondary_gts(GEARBOX_GEARTOOTH_SENSOR_PIN, GEAR_SAMPLE_WINDOW, GEAR_COUNTS_PER_ROT),
-      odrive(1),
+      odrive(ECVT_ODRIVE_NODE_ID),
       shift_reg(sr), 
       control_cycle_count(0)
 {

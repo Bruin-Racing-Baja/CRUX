@@ -36,6 +36,9 @@ constexpr uint32_t CONTROL_FUNCTION_INTERVAL_MS = 10;
 // CAN Values 
 constexpr uint32_t CAN_BITRATE = 250000;
 
+constexpr uint8_t ECVT_ODRIVE_NODE_ID = 1; 
+constexpr uint8_t CENTERLOCK_ODRIVE_NODE_ID = 3; 
+
 // Electronics Pins 
 constexpr uint32_t ENGINE_GEARTOOTH_SENSOR_PIN = 17;
 constexpr uint32_t GEARBOX_GEARTOOTH_SENSOR_PIN = 16;
