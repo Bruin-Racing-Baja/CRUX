@@ -10,6 +10,9 @@
 #include <stdint.h>
 
 // ODrive CAN Protocol Commands (CMD_ID portion of arbitration ID)
+
+static const uint32_t TX_QUEUE_DEPTH = 10;
+static const uint32_t BAUD_RATE = 250000;
 static const uint32_t CONTROL_MODE_VOLTAGE_CONTROL = 0x0;
   static const uint32_t CONTROL_MODE_TORQUE_CONTROL = 0x1;
   static const uint32_t CONTROL_MODE_VELOCITY_CONTROL = 0x2;
