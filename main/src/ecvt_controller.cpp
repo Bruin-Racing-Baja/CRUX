@@ -82,6 +82,9 @@ void ECVTController::control_loop()
 {
     //ESP_LOGI(TAG, "Start");
     float dt_s = CONTROL_FUNCTION_INTERVAL_MS * SECONDS_PER_MS;
+    float override = 0.0f;
+    float last_pos = odrive.get_pos();
+    int64_t last_pos_time = esp_timer_get_time();
     while(true)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -111,7 +114,24 @@ void ECVTController::control_loop()
         odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_VEL_RAMP);
         //ESP_LOGI(TAG, "Velocity Command %.2f, Geartooth rpm %.2f, Secondary rpm %.2f", velocity_command, primary_rpm, secondary_rpm);
         //ESP_LOGI(TAG, "Gear Count Primary: %d", primary_gts.get_count());
-        if(!(get_outbound_limit() && velocity_command > 0) && !(get_inbound_limit() && velocity_command < 0)) //Check signs on this
+        // if(get_inbound_limit())
+        //     override = 10.0f;
+    
+        // if(get_outbound_limit())
+        //     override = 0.0f;
+        
+        // if(override != 0.0f) 
+        //     velocity_command = override;
+
+        if(odrive.get_pos() != last_pos) {
+            last_pos = odrive.get_pos();
+            last_pos_time = esp_timer_get_time();
+        }
+        if((esp_timer_get_time() - last_pos_time) > 5e4 && velocity_command > 0) {
+            velocity_command = 0.0f;
+        }
+        
+        //if(!(get_outbound_limit() && velocity_command > 0) && !(get_inbound_limit() && velocity_command < 0)) //Check signs on this
             odrive.set_input_vel(velocity_command * ECVT_DIR, 0.0f);
         
         
@@ -148,28 +168,36 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
     odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_VEL_RAMP);
 
     /* Shift out to outbound LS */
-    uint32_t start_time_ms = esp_timer_get_time() / 1e3;
-    while(!get_outbound_limit()) {
+    uint32_t last_time_ms = esp_timer_get_time() / 1e3;
+    while(esp_timer_get_time() / 1e3 - last_time_ms < 5e4) {
         odrive.set_input_vel(-ECVT_HOME_SPEED * ECVT_DIR);
-        if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
-            odrive.set_input_vel(0.0);
-            return false;
-        }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
+    odrive.set_input_vel(0.0f, 0.0f);
+    // odrive.set_absolute_position(0.0f);
+    // uint32_t start_time_ms = esp_timer_get_time() / 1e3;
 
-    /* Shift in to inbound LS */
-    start_time_ms = esp_timer_get_time() / 1e3;
-    while(!get_engage_limit()) {
-        odrive.set_input_vel(ECVT_HOME_SPEED * ECVT_DIR);
-        if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
-            odrive.set_input_vel(0.0);
-            return false;
-        }
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
+    // while(!get_outbound_limit()) {
+    //     odrive.set_input_vel(-ECVT_HOME_SPEED * ECVT_DIR);
+    //     if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
+    //         odrive.set_input_vel(0.0);
+    //         return false;
+    //     }
+    //     vTaskDelay(pdMS_TO_TICKS(10));
+    // }
 
-    odrive.set_input_vel(0.0);
+    // /* Shift in to inbound LS */
+    // start_time_ms = esp_timer_get_time() / 1e3;
+    // while(!get_engage_limit()) {
+    //     odrive.set_input_vel(ECVT_HOME_SPEED * ECVT_DIR);
+    //     if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
+    //         odrive.set_input_vel(0.0);
+    //         return false;
+    //     }
+    //     vTaskDelay(pdMS_TO_TICKS(10));
+    // }
+
+    // odrive.set_input_vel(0.0);
 
     return true; 
 }

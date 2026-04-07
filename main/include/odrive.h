@@ -131,6 +131,7 @@ public:
     void set_limits(float vel_limit, float current_limit);
     void set_pos_gain(float pos_gain);
     void set_vel_gains(float vel_gain, float vel_integrator_gain);
+    void set_absolute_position(float pos);
     void estop();
     void clear_errors();
     void reboot();
@@ -143,11 +144,13 @@ public:
 
     // Getter functions 
     uint32_t get_time_since_last_heartbeat(); 
+    float get_pos();
 
     // Callback registration
     void set_heartbeat_callback(odrive_heartbeat_cb_t cb, void* ctx);
     void set_encoder_callback(odrive_encoder_cb_t cb, void* ctx);
     void set_iq_callback(odrive_iq_cb_t cb, void* ctx);
+    
 
 private:
     static QueueHandle_t can_tx_queue;
@@ -208,6 +211,11 @@ private:
     void* encoder_ctx_;
     odrive_iq_cb_t iq_cb_;
     void* iq_ctx_;
+    
+    float pos; // Last received position from encoder estimates
+    float vel; // Last received velocity from encoder estimates
+
+    
 };
 
 #endif 
