@@ -83,8 +83,7 @@ void ECVTController::control_loop()
     //ESP_LOGI(TAG, "Start");
     float dt_s = CONTROL_FUNCTION_INTERVAL_MS * SECONDS_PER_MS;
     float override = 0.0f;
-    float last_pos = odrive.get_pos();
-    int64_t last_pos_time = esp_timer_get_time();
+    
     while(true)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -123,11 +122,8 @@ void ECVTController::control_loop()
         // if(override != 0.0f) 
         //     velocity_command = override;
 
-        if(odrive.get_pos() != last_pos) {
-            last_pos = odrive.get_pos();
-            last_pos_time = esp_timer_get_time();
-        }
-        if((esp_timer_get_time() - last_pos_time) > 5e4 && velocity_command > 0) {
+       
+        if(odrive.get_pos() < 0.1f && velocity_command < 0) {
             velocity_command = 0.0f;
         }
         
