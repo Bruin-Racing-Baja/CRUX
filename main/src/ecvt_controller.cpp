@@ -12,7 +12,8 @@ ECVTController::ECVTController(controller_mode_t mode_, ShiftRegister* sr, bool 
       secondary_gts(GEARBOX_GEARTOOTH_SENSOR_PIN, GEAR_SAMPLE_WINDOW, GEAR_COUNTS_PER_ROT),
       odrive(1),
       shift_reg(sr), 
-      control_cycle_count(0)
+      control_cycle_count(0),
+      actuator_engage_position(0)
 {
     instance = this; 
 }
@@ -34,12 +35,6 @@ void ECVTController::init(bool wait_for_can, Telemetry* telem)
     vTaskDelay(pdMS_TO_TICKS(2000));
     shift_reg->write_all_leds(false);
 
-    attachInterrupt(ENGINE_GEARTOOTH_SENSOR_PIN, primary_isr, InterruptMode::RISING_EDGE);    
-    attachInterrupt(GEARBOX_GEARTOOTH_SENSOR_PIN, secondary_isr, InterruptMode::RISING_EDGE);
-
-    attachInterrupt(ECVT_LIMIT_SWITCH_INBOUND_PIN, inbound_isr, InterruptMode::RISING_EDGE);
-    attachInterrupt(ECVT_LIMIT_SWITCH_OUTBOUND_PIN, outbound_isr, InterruptMode::RISING_EDGE);
-
     /* Wait for CAN Heartbeat - Blinking LEDs */
     if (wait_for_can) {
         vTaskDelay(pdMS_TO_TICKS(3000));
@@ -59,6 +54,12 @@ void ECVTController::init(bool wait_for_can, Telemetry* telem)
     if (homed) {
         ESP_LOGI(TAG, "Actuator Homed!");
     }
+
+    attachInterrupt(ENGINE_GEARTOOTH_SENSOR_PIN, primary_isr, InterruptMode::RISING_EDGE);    
+    attachInterrupt(GEARBOX_GEARTOOTH_SENSOR_PIN, secondary_isr, InterruptMode::RISING_EDGE);
+
+    attachInterrupt(ECVT_LIMIT_SWITCH_INBOUND_PIN, inbound_isr, InterruptMode::RISING_EDGE);
+    attachInterrupt(ECVT_LIMIT_SWITCH_OUTBOUND_PIN, outbound_isr, InterruptMode::RISING_EDGE);
     
     xTaskCreatePinnedToCore(taskWrapper, "ecvt_task", 4096, this, 10, &taskHandle, 1);
 
@@ -123,10 +124,15 @@ void ECVTController::control_loop()
         //     velocity_command = override;
 
        
-        if(odrive.get_pos() < 0.1f && velocity_command < 0) {
-            velocity_command = 0.0f;
+        if (odrive.get_pos() * ECVT_DIR > ACTUATOR_INBOUND_THRESHOLD && velocity_command * ECVT_DIR > 0) {
+            velocity_command = 0.0f; 
         }
-        
+
+        if (odrive.get_pos() * ECVT_DIR < actuator_engage_position && velocity_command * ECVT_DIR <= 0) {
+            shift_reg->write_led(3, true);
+            velocity_command = VELOCITY_LIMIT * ECVT_DIR;
+        }
+    
         //if(!(get_outbound_limit() && velocity_command > 0) && !(get_inbound_limit() && velocity_command < 0)) //Check signs on this
             odrive.set_input_vel(velocity_command * ECVT_DIR, 0.0f);
         
@@ -153,6 +159,9 @@ void ECVTController::control_loop()
         Telemetry::back_buffer = Telemetry::front_buffer.exchange(Telemetry::back_buffer);
 
         control_cycle_count++;
+
+        if (control_cycle_count % 20 == 0)
+            ESP_LOGE(TAG, "pos: %d", odrive.get_pos());
     }
 }
 
@@ -161,45 +170,44 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
     /* Add delay to give ODrive time to initialize */
     vTaskDelay(pdMS_TO_TICKS(1000));
     odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL); 
-    
-    //odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_VEL_RAMP);
+    odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_VEL_RAMP);
 
-    /* Shift out to outbound LS */
-    uint32_t last_time_ms = esp_timer_get_time() / 1e3;
-    while(esp_timer_get_time() / 1e3 - last_time_ms < 5e4) {
-        odrive.set_input_vel(-ECVT_HOME_SPEED * ECVT_DIR);
+    /* Shift in to engaged LS */
+    uint32_t start_time_ms = esp_timer_get_time() / 1e3;
+    while(!get_engage_limit()) {
+        odrive.set_input_vel(ECVT_HOME_SPEED * ECVT_DIR);
+        if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
+            odrive.set_input_vel(0.0);
+            return false;
+        }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-    odrive.set_input_vel(0.0f, 0.0f);
-    odrive.set_controller_mode(CTRL_MODE_POSITION_CONTROL,
-                                  INPUT_MODE_PASSTHROUGH);
-    odrive.set_input_pos(5.0f, 0, 0);
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_VEL_RAMP);
-    // odrive.set_absolute_position(0.0f);
-    // uint32_t start_time_ms = esp_timer_get_time() / 1e3;
 
-    // while(!get_outbound_limit()) {
-    //     odrive.set_input_vel(-ECVT_HOME_SPEED * ECVT_DIR);
-    //     if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
-    //         odrive.set_input_vel(0.0);
-    //         return false;
-    //     }
-    //     vTaskDelay(pdMS_TO_TICKS(10));
-    // }
+    
+    /* Shift out to outbound LS */
+    start_time_ms = esp_timer_get_time() / 1e3;
+    while(!get_outbound_limit()) {
+        odrive.set_input_vel(-ECVT_HOME_SPEED * ECVT_DIR);
+        if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
+            odrive.set_input_vel(0.0);
+            return false;
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
 
-    // /* Shift in to inbound LS */
-    // start_time_ms = esp_timer_get_time() / 1e3;
-    // while(!get_engage_limit()) {
-    //     odrive.set_input_vel(ECVT_HOME_SPEED * ECVT_DIR);
-    //     if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
-    //         odrive.set_input_vel(0.0);
-    //         return false;
-    //     }
-    //     vTaskDelay(pdMS_TO_TICKS(10));
-    // }
+    /* Shift in to engaged LS */
+    start_time_ms = esp_timer_get_time() / 1e3;
+    while(!get_engage_limit()) {
+        odrive.set_input_vel(ECVT_HOME_SPEED * ECVT_DIR);
+        if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
+            odrive.set_input_vel(0.0);
+            return false;
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    actuator_engage_position = odrive.get_pos(); 
 
-    // odrive.set_input_vel(0.0);
+    odrive.set_input_vel(0.0);
 
     return true; 
 }
@@ -262,6 +270,7 @@ void IRAM_ATTR ECVTController::secondary_isr(void* p) {
 
 void IRAM_ATTR ECVTController::outbound_isr(void* p) {
     if (instance) {
+        instance->shift_reg->write_led(0, true);
         instance->odrive.set_input_vel(0.0f, 0.0f);
     }
 }

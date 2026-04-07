@@ -67,7 +67,7 @@ extern "C" void app_main(void)
     Telemetry::init();
 
     vTaskDelay(pdMS_TO_TICKS(500));
-    xTaskCreatePinnedToCore(Telemetry::send_data, "telemetry_task", 4096,  nullptr, tskIDLE_PRIORITY + 5, NULL, 0);
+    // xTaskCreatePinnedToCore(Telemetry::send_data, "telemetry_task", 4096,  nullptr, tskIDLE_PRIORITY + 5, NULL, 0);
     ecvt_controller.init(true);
 
     while(true)

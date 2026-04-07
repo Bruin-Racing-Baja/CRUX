@@ -28,7 +28,7 @@ constexpr float GEAR_TO_SECONDARY_RATIO = 17.0f / 50.0f;
 
 constexpr float VELOCITY_LIMIT = 10.0f;
 constexpr float ECVT_HOME_SPEED = 4.0f;
-constexpr int ECVT_DIR = 1.0;
+constexpr int ECVT_DIR = -1.0;
 
 constexpr uint32_t CONTROL_FUNCTION_INTERVAL_MS = 10;
 
@@ -46,8 +46,8 @@ constexpr uint32_t SR_SER_IN_PIN = 21;  // serin
 constexpr uint32_t SR_SHIFT_REG_CLK_PIN = 45; // srck
 constexpr uint32_t SR_REG_CLK_PIN = 46; // rck
 
-constexpr gpio_num_t ECVT_LIMIT_SWITCH_INBOUND_PIN = GPIO_NUM_12; 
-constexpr gpio_num_t ECVT_LIMIT_SWITCH_OUTBOUND_PIN = GPIO_NUM_10; 
+constexpr gpio_num_t ECVT_LIMIT_SWITCH_INBOUND_PIN = GPIO_NUM_10; 
+constexpr gpio_num_t ECVT_LIMIT_SWITCH_OUTBOUND_PIN = GPIO_NUM_12; 
 constexpr gpio_num_t ECVT_LIMIT_SWITCH_ENGAGE_PIN = GPIO_NUM_11; /* Not used */
 
 constexpr uint32_t CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN = 8;
@@ -118,5 +118,7 @@ constexpr float ACTUATOR_KI = 0.000f;
 constexpr float ACTUATOR_KD = 0.000f;
 
 constexpr float ECVT_TARGET_RPM = 3000.0f;
+
+constexpr float ACTUATOR_INBOUND_THRESHOLD = 8.0f;
 
 #endif // CONSTANTS_H
