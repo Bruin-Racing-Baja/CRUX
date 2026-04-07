@@ -194,6 +194,7 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
+    odrive.set_absolute_position(0.0f);
 
     /* Shift in to engaged LS */
     start_time_ms = esp_timer_get_time() / 1e3;
