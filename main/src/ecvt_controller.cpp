@@ -128,7 +128,7 @@ void ECVTController::control_loop()
             velocity_command = 0.0f; 
         }
 
-        if (odrive.get_pos() * ECVT_DIR < 10.0f && velocity_command <= 0) {
+        if (odrive.get_pos() * ECVT_DIR < actuator_engage_position && velocity_command <= 0) {
             shift_reg->write_led(3, true);
             velocity_command = VELOCITY_LIMIT;
         }
