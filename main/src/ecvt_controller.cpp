@@ -152,6 +152,10 @@ void ECVTController::control_loop()
 
         Telemetry::back_buffer->velocity_command = velocity_command; 
         
+        Telemetry::back_buffer->ecvt_velocity = odrive.get_vel() * ECVT_DIR;
+        Telemetry::back_buffer->ecvt_pos = odrive.get_pos() * ECVT_DIR;
+        Telemetry::back_buffer->ecvt_iq = odrive.get_iq();
+
         Telemetry::back_buffer->inbound_limit_switch = get_inbound_limit(); 
         Telemetry::back_buffer->outbound_limit_switch = get_outbound_limit(); 
         Telemetry::back_buffer->engage_limit_switch = get_engage_limit(); 

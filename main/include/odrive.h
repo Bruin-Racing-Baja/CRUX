@@ -145,6 +145,8 @@ public:
     // Getter functions 
     uint32_t get_time_since_last_heartbeat(); 
     float get_pos();
+    float get_vel();
+    float get_iq();
 
     // Callback registration
     void set_heartbeat_callback(odrive_heartbeat_cb_t cb, void* ctx);
@@ -214,6 +216,8 @@ private:
     
     float pos; // Last received position from encoder estimates
     float vel; // Last received velocity from encoder estimates
+
+    float iq_setpoint, iq_measured;
 
     
 };

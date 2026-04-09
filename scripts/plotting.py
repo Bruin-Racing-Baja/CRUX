@@ -167,6 +167,7 @@ def run_app(filepath):
     df = pd.read_csv(filepath)
 
     # Compute derived channels
+    print(df.columns)
     if "target_rpm" in df.columns and "engine_rpm" in df.columns:
         df["target_engine_rpm_diff"] = df["target_rpm"] - df["engine_rpm"]
         df["target_engine_rpm_diff_sum"] = df["target_engine_rpm_diff"].cumsum()

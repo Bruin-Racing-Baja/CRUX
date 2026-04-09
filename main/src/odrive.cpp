@@ -474,16 +474,23 @@ float ODrive::get_pos()
 {
     return pos;
 }
+float ODrive::get_vel()
+{
+    return vel;
+}
+
+float ODrive::get_iq()
+{
+    return iq_measured;
+}
 
 void ODrive::parse_iq(const uint8_t* data, uint8_t len)
 {
     if (len < 8) return;
     
     float iq_setpoint, iq_measured;
+
     memcpy(&iq_setpoint, &data[0], 4);
     memcpy(&iq_measured, &data[4], 4);
     
-    if (iq_cb_) {
-        iq_cb_(iq_setpoint, iq_measured, iq_ctx_);
-    }
 }
