@@ -46,8 +46,8 @@ constexpr uint32_t SR_SER_IN_PIN = 21;  // serin
 constexpr uint32_t SR_SHIFT_REG_CLK_PIN = 45; // srck
 constexpr uint32_t SR_REG_CLK_PIN = 46; // rck
 
-constexpr gpio_num_t ECVT_LIMIT_SWITCH_INBOUND_PIN = GPIO_NUM_10; 
-constexpr gpio_num_t ECVT_LIMIT_SWITCH_OUTBOUND_PIN = GPIO_NUM_12; 
+constexpr gpio_num_t ECVT_LIMIT_SWITCH_INBOUND_PIN = GPIO_NUM_12; 
+constexpr gpio_num_t ECVT_LIMIT_SWITCH_OUTBOUND_PIN = GPIO_NUM_10; 
 constexpr gpio_num_t ECVT_LIMIT_SWITCH_ENGAGE_PIN = GPIO_NUM_11; /* Not used */
 
 constexpr uint32_t CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN = 8;
