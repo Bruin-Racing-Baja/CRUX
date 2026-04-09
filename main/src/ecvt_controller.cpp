@@ -160,8 +160,8 @@ void ECVTController::control_loop()
 
         control_cycle_count++;
 
-    //     if (control_cycle_count % 20 == 0)
-    //         ESP_LOGE(TAG, "pos: %f", odrive.get_pos());
+        // if (control_cycle_count % 20 == 0)
+        //     ESP_LOGE(TAG, "rpm: %f filtered: %f", engine_rpm_rpm, filtered_engine_rpm);
     }
 }
 
