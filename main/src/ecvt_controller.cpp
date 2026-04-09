@@ -124,13 +124,13 @@ void ECVTController::control_loop()
         //     velocity_command = override;
 
        
-        if (odrive.get_pos() * ECVT_DIR > ACTUATOR_INBOUND_THRESHOLD && velocity_command * ECVT_DIR > 0) {
+        if (odrive.get_pos() * ECVT_DIR > ACTUATOR_INBOUND_THRESHOLD && velocity_command > 0) {
             velocity_command = 0.0f; 
         }
 
-        if (odrive.get_pos() * ECVT_DIR < actuator_engage_position && velocity_command * ECVT_DIR <= 0) {
+        if (odrive.get_pos() * ECVT_DIR < actuator_engage_position && velocity_command <= 0) {
             shift_reg->write_led(3, true);
-            velocity_command = VELOCITY_LIMIT * ECVT_DIR;
+            velocity_command = VELOCITY_LIMIT;
         }
     
         //if(!(get_outbound_limit() && velocity_command > 0) && !(get_inbound_limit() && velocity_command < 0)) //Check signs on this
@@ -160,9 +160,9 @@ void ECVTController::control_loop()
 
         control_cycle_count++;
 
-        if (control_cycle_count % 20 == 0)
-            ESP_LOGE(TAG, "pos: %d", odrive.get_pos());
-    }
+    //     if (control_cycle_count % 20 == 0)
+    //         ESP_LOGE(TAG, "pos: %f", odrive.get_pos());
+    // }
 }
 
 bool ECVTController::home_actuator(uint32_t timeout_ms) 
