@@ -124,9 +124,9 @@ void ECVTController::control_loop()
         //     velocity_command = override;
 
        
-        if (odrive.get_pos() * ECVT_DIR > ACTUATOR_INBOUND_THRESHOLD && velocity_command > 0) {
-            velocity_command = 0.0f; 
-        }
+        // if (odrive.get_pos() * ECVT_DIR > ACTUATOR_INBOUND_THRESHOLD && velocity_command > 0) {
+        //     velocity_command = 0.0f; 
+        // }
 
         if (odrive.get_pos() * ECVT_DIR < actuator_engage_position && velocity_command <= 0) {
             shift_reg->write_led(3, true);
@@ -162,7 +162,7 @@ void ECVTController::control_loop()
 
     //     if (control_cycle_count % 20 == 0)
     //         ESP_LOGE(TAG, "pos: %f", odrive.get_pos());
-    // }
+    }
 }
 
 bool ECVTController::home_actuator(uint32_t timeout_ms) 
@@ -206,7 +206,7 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-    actuator_engage_position = odrive.get_pos(); 
+    actuator_engage_position = odrive.get_pos() * ECVT_DIR; 
 
     odrive.set_input_vel(0.0);
 
