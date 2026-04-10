@@ -111,6 +111,7 @@ void ECVTController::control_loop()
             MAX(0, engine_rpm_derror * ACTUATOR_KD));
         velocity_command = CLAMP(velocity_command, -VELOCITY_LIMIT, VELOCITY_LIMIT);
         odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
+        
         odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
         //ESP_LOGI(TAG, "Velocity Command %.2f, Geartooth rpm %.2f, Secondary rpm %.2f", velocity_command, primary_rpm, secondary_rpm);
         //ESP_LOGI(TAG, "Gear Count Primary: %d", primary_gts.get_count());
@@ -128,13 +129,24 @@ void ECVTController::control_loop()
         //     velocity_command = 0.0f; 
         // }
 
-        if (odrive.get_pos() * ECVT_DIR < actuator_engage_position && velocity_command <= 0) {
+        if (odrive.get_pos() * ECVT_DIR <= actuator_engage_position + 0.1 && velocity_command <= 0) {
+            if(odrive.get_pos() * ECVT_DIR > actuator_engage_position - 0.1)
+                odrive.set_axis_state(AXIS_STATE_IDLE);
+            else
+            {
+                odrive.set_controller_mode(CTRL_MODE_POSITION_CONTROL, INPUT_MODE_PASSTHROUGH);
+                odrive.set_input_pos(actuator_engage_position * ECVT_DIR, 0, 0);
+            }
             shift_reg->write_led(3, true);
-            velocity_command = 2 * ECVT_HOME_SPEED;
+
         }
-    
-        //if(!(get_outbound_limit() && velocity_command > 0) && !(get_inbound_limit() && velocity_command < 0)) //Check signs on this
+        else{
+            odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
+            odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
             odrive.set_input_vel(velocity_command * ECVT_DIR, 0.0f);
+        }
+        //if(!(get_outbound_limit() && velocity_command > 0) && !(get_inbound_limit() && velocity_command < 0)) //Check signs on this
+           
         
         
         uint64_t time_us = esp_timer_get_time();
