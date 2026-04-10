@@ -28,7 +28,7 @@ constexpr float GEAR_TO_SECONDARY_RATIO = 17.0f / 50.0f;
 
 constexpr float VELOCITY_LIMIT = 30.0f;
 constexpr float ECVT_HOME_SPEED = 4.0f;
-constexpr int ECVT_DIR = -1.0;
+constexpr int ECVT_DIR = 1.0;
 
 constexpr uint32_t CONTROL_FUNCTION_INTERVAL_MS = 10;
 
@@ -113,9 +113,9 @@ constexpr float THROTTLE_FILTER_A[] = {1., -0.88161859};
 constexpr size_t THROTTLE_FILTER_M = COUNT_OF(THROTTLE_FILTER_B);
 constexpr size_t THROTTLE_FILTER_N = COUNT_OF(THROTTLE_FILTER_A);
 
-constexpr float ACTUATOR_KP = 0.03f;   
+constexpr float ACTUATOR_KP = 0.01f;   
 constexpr float ACTUATOR_KI = 0.000f;   
-constexpr float ACTUATOR_KD = 0.000f;
+constexpr float ACTUATOR_KD = 0.004f;
 
 constexpr float ECVT_TARGET_RPM = 3000.0f;
 
