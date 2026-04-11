@@ -488,8 +488,6 @@ void ODrive::parse_iq(const uint8_t* data, uint8_t len)
 {
     if (len < 8) return;
     
-    float iq_setpoint, iq_measured;
-
     memcpy(&iq_setpoint, &data[0], 4);
     memcpy(&iq_measured, &data[4], 4);
     
