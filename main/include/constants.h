@@ -20,13 +20,13 @@ constexpr float INCH_PER_FEET = 12.0f;   /* inch / feet */
 constexpr uint32_t ENGINE_SAMPLE_WINDOW = 4;
 constexpr uint32_t GEAR_SAMPLE_WINDOW = 10;
 
-constexpr float ENGINE_COUNTS_PER_ROT = 32; // count / rot
+constexpr float ENGINE_COUNTS_PER_ROT = 24; // count / rot
 constexpr float GEAR_COUNTS_PER_ROT = 6;    // count / rot
 
 constexpr float GEAR_TO_WHEEL_RATIO = 58.0f / 19.0f;                
 constexpr float GEAR_TO_SECONDARY_RATIO = 17.0f / 50.0f;
 
-constexpr float VELOCITY_LIMIT = 10.0f;
+constexpr float VELOCITY_LIMIT = 30.0f;
 constexpr float ECVT_HOME_SPEED = 4.0f;
 constexpr int ECVT_DIR = 1.0;
 
@@ -36,8 +36,8 @@ constexpr uint32_t CONTROL_FUNCTION_INTERVAL_MS = 10;
 constexpr uint32_t CAN_BITRATE = 250000;
 
 // Electronics Pins 
-constexpr uint32_t ENGINE_GEARTOOTH_SENSOR_PIN = 17;
-constexpr uint32_t GEARBOX_GEARTOOTH_SENSOR_PIN = 16;
+constexpr uint32_t ENGINE_GEARTOOTH_SENSOR_PIN = 16;
+constexpr uint32_t GEARBOX_GEARTOOTH_SENSOR_PIN = 17;
 
 constexpr gpio_num_t BRAKE_POT_PIN = GPIO_NUM_15;
 constexpr gpio_num_t THROT_POT_PIN = GPIO_NUM_7;
@@ -113,10 +113,12 @@ constexpr float THROTTLE_FILTER_A[] = {1., -0.88161859};
 constexpr size_t THROTTLE_FILTER_M = COUNT_OF(THROTTLE_FILTER_B);
 constexpr size_t THROTTLE_FILTER_N = COUNT_OF(THROTTLE_FILTER_A);
 
-constexpr float ACTUATOR_KP = 0.03f;   
+constexpr float ACTUATOR_KP = 0.01f;   
 constexpr float ACTUATOR_KI = 0.000f;   
-constexpr float ACTUATOR_KD = 0.000f;
+constexpr float ACTUATOR_KD = 0.004f;
 
 constexpr float ECVT_TARGET_RPM = 3000.0f;
+
+constexpr float ACTUATOR_INBOUND_THRESHOLD = 8.0f;
 
 #endif // CONSTANTS_H

@@ -27,6 +27,10 @@ struct VehicleData {
     float engine_rpm_error; 
 
     float velocity_command; 
+
+    float ecvt_velocity;
+    float ecvt_pos;
+    float ecvt_iq;
     
     float inbound_limit_switch;
     float outbound_limit_switch; 

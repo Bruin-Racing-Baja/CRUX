@@ -88,6 +88,8 @@ private:
 
     MedianFilter engine_rpm_median_filter{ENGINE_RPM_MEDIAN_FILTER_WINDOW};
     float last_engine_rpm_error;
+
+    float actuator_engage_position;
 };
 
 #endif // ECVT_CONTROLLER_H
