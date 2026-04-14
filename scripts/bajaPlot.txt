@@ -1,0 +1,6 @@
+Issues:
+plot resets when changing preset on a separate plot
+
+Fixed:
+port permanently 8050
+link fixed

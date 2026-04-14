@@ -412,9 +412,9 @@ def run_app(filepath):
 
         return figs
 
-    port = random.randint(8050, 8099)
-    print(f"\n🚀  PLUNETTE running → http://0.0.0.0:{port}\n")
-    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
+    port = 8050
+    print(f"\n🚀  PLUNETTE running → http://127.0.0.1:{port}\n")
+    app.run(host="127.0.0.1", port=port, debug=True, use_reloader=False)
     return port
 
 
