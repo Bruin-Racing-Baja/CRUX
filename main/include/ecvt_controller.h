@@ -10,7 +10,6 @@
 #include <constants.h>
 #include <input_output/shift_register.h>
 #include <odrive.h> 
-#include "esp_timer.h"
 
 typedef enum {
     NORMAL = 0, 

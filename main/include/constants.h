@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <cstdint>
 #include <macros.h>
+#include "driver/gpio.h"
 /* Units */
 constexpr float SECONDS_PER_MINUTE = 60.0f; /* s / min */
 constexpr float MS_PER_SECOND = 1.0e3;     /* ms / s */ 
@@ -35,6 +36,9 @@ constexpr uint32_t CONTROL_FUNCTION_INTERVAL_MS = 10;
 // CAN Values 
 constexpr uint32_t CAN_BITRATE = 250000;
 
+constexpr uint8_t ECVT_ODRIVE_NODE_ID = 1; 
+constexpr uint8_t CENTERLOCK_ODRIVE_NODE_ID = 3; 
+
 // Electronics Pins 
 constexpr uint32_t ENGINE_GEARTOOTH_SENSOR_PIN = 16;
 constexpr uint32_t GEARBOX_GEARTOOTH_SENSOR_PIN = 17;
@@ -50,11 +54,11 @@ constexpr gpio_num_t ECVT_LIMIT_SWITCH_INBOUND_PIN = GPIO_NUM_12;
 constexpr gpio_num_t ECVT_LIMIT_SWITCH_OUTBOUND_PIN = GPIO_NUM_10; 
 constexpr gpio_num_t ECVT_LIMIT_SWITCH_ENGAGE_PIN = GPIO_NUM_11; /* Not used */
 
-constexpr uint32_t CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN = 8;
-constexpr uint32_t CENTERLOCK_LIMIT_SWITCH_OUTBOUND_PIN = 18;
+constexpr gpio_num_t CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN = GPIO_NUM_18;
+constexpr gpio_num_t CENTERLOCK_LIMIT_SWITCH_OUTBOUND_PIN = GPIO_NUM_8;
 constexpr gpio_num_t CENTERLOCK_LED_PIN = GPIO_NUM_2;
-constexpr gpio_num_t CENTERLOCK_SWITCH_1_PIN = GPIO_NUM_13; 
-constexpr gpio_num_t CENTERLOCK_SWITCH_2_PIN = GPIO_NUM_6; 
+// constexpr gpio_num_t CENTERLOCK_SWITCH_1_PIN = GPIO_NUM_13; 
+// constexpr gpio_num_t CENTERLOCK_SWITCH_2_PIN = GPIO_NUM_6; 
 constexpr gpio_num_t CENTERLOCK_GTS_PIN = GPIO_NUM_9; 
 
 constexpr gpio_num_t CAN_TX_PIN = GPIO_NUM_5;
@@ -65,9 +69,19 @@ constexpr gpio_num_t BUTTON_3_PIN = GPIO_NUM_1;
 constexpr gpio_num_t BUTTON_2_PIN = GPIO_NUM_44; 
 constexpr gpio_num_t BUTTON_1_PIN = GPIO_NUM_43; 
 
+constexpr gpio_num_t CENTERLOCK_SWITCH_1_PIN = BUTTON_1_PIN; 
+constexpr gpio_num_t CENTERLOCK_SWITCH_2_PIN = BUTTON_2_PIN; 
+
 constexpr gpio_num_t EXTRA_IO_2_PIN = GPIO_NUM_45; 
 constexpr gpio_num_t EXTRA_IO_1_PIN = GPIO_NUM_46; 
 constexpr gpio_num_t EXTRA_GTS_PIN = GPIO_NUM_3; 
+
+constexpr float CENTERLOCK_ODRIVE_VEL_LIMIT = 30.0; 
+constexpr float CENTERLOCK_ODRIVE_CURRENT_LIMIT = 3.0;
+
+constexpr float CENTERLOCK_HOME_VEL = 2; 
+constexpr float CENTERLOCK_VEL = 20; 
+constexpr float CENTERLOCK_DIR = 1; 
 
 /* DAQ Pinouts */
 constexpr int DAQ_LED_1_PIN = 21; 
