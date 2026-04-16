@@ -25,6 +25,7 @@ constexpr int ECVT_DIR = 1.0;
 constexpr float CENTERLOCK_HOME_VEL = 2; 
 constexpr float CENTERLOCK_VEL = 20; 
 constexpr float CENTERLOCK_DIR = 1; 
+constexpr uint32_t CENTERLOCK_BUTTON_DEBOUNCE_MS = 20;
 
 /* ECVT Controller Values */
 constexpr float ACTUATOR_KP = 0.01f;   
