@@ -6,9 +6,8 @@
 
 static const char *TAG = "twai_sender";
 ECVTController* ECVTController::instance = nullptr;
-ECVTController::ECVTController(controller_mode_t mode_, ShiftRegister* sr, bool wait_for_can)
-    : mode(mode_),
-      primary_gts(ENGINE_GEARTOOTH_SENSOR_PIN, ENGINE_SAMPLE_WINDOW, ENGINE_COUNTS_PER_ROT), 
+ECVTController::ECVTController(ShiftRegister* sr, bool wait_for_can)
+    : primary_gts(ENGINE_GEARTOOTH_SENSOR_PIN, ENGINE_SAMPLE_WINDOW, ENGINE_COUNTS_PER_ROT), 
       secondary_gts(GEARBOX_GEARTOOTH_SENSOR_PIN, GEAR_SAMPLE_WINDOW, GEAR_COUNTS_PER_ROT),
       odrive(ECVT_ODRIVE_NODE_ID),
       shift_reg(sr), 
@@ -226,38 +225,6 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
     odrive.set_input_vel(0.0);
 
     return true; 
-}
-
-void ECVTController::control_function() {
-    if (mode == NORMAL) {
-        normal_control_function();
-    } 
-    else if (mode == BUTTON_SHIFT) {
-        button_shift_control_function(); 
-    }
-} 
-
-void ECVTController::button_shift_control_function() {
-    /* Button Shift Control Function */
-    bool button_1_pressed = digitalRead(BUTTON_1_PIN);
-    bool button_2_pressed = digitalRead(BUTTON_2_PIN);
-    bool button_3_pressed = digitalRead(BUTTON_3_PIN);
-    bool button_4_pressed = digitalRead(BUTTON_4_PIN);
-
-    float velocity = 10.0 * ECVT_DIR; 
-    if (button_1_pressed) {
-        odrive.set_axis_state(AXIS_STATE_IDLE); 
-    } else if (button_2_pressed) {
-        odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL); 
-    } else if (button_3_pressed) {
-        odrive.set_input_vel(velocity); 
-    } else if (button_4_pressed) {
-        odrive.set_input_vel(-velocity);
-    } else {
-        odrive.set_input_vel(0.0); 
-    }
-
-    control_cycle_count++; 
 }
 
 bool ECVTController::get_outbound_limit() {

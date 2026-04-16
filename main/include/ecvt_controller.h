@@ -11,14 +11,9 @@
 #include <input_output/shift_register.h>
 #include <odrive.h> 
 
-typedef enum {
-    NORMAL = 0, 
-    BUTTON_SHIFT = 1
-} controller_mode_t;
-
 class ECVTController {
 public:
-    ECVTController(controller_mode_t mode_, ShiftRegister* sr, bool wait_for_can = true);
+    ECVTController(ShiftRegister* sr, bool wait_for_can = true);
 
     void init(bool wait_for_can=true, Telemetry* telem = nullptr);
     bool home_actuator(uint32_t timeout_ms=5000); 
@@ -28,8 +23,6 @@ public:
     void normal_control_function(); 
 
 private:
-    controller_mode_t mode; 
-
     bool get_outbound_limit(); 
     bool get_inbound_limit(); 
     bool get_engage_limit();
