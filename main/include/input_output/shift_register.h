@@ -17,11 +17,11 @@ public:
 private:
     void write_byte(uint8_t byte);
 
-    const uint32_t SER_IN_PIN;             // serial input
-    const uint32_t SHIFT_REG_CLK_PIN;      // shift register clock
-    const uint32_t REG_CLK_PIN;            // register clock (activates latch)
+    const uint32_t SER_IN_PIN;             /* serial input */
+    const uint32_t SHIFT_REG_CLK_PIN;      /* shift register clock */
+    const uint32_t REG_CLK_PIN;            /* register clock (activates latch) */
     
-    uint8_t data;                    // current data on shift register (default 0) // essentially current state
+    uint8_t data;                          /* current data on shift register (default 0) */
 };
 
 #endif // SHIFT_REGISTER_H
