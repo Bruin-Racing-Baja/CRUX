@@ -198,6 +198,13 @@ def run_app(filepath):
             .Select-option { background-color: #13161f !important; color: #e0e6f0 !important; }
             .Select-option:hover { background-color: #1e2433 !important; }
             .dash-dropdown .Select-multi-value-wrapper .Select-value { background: #1e2433 !important; border-color: #00e5ff33 !important; }
+            .controls-bar input[type="number"],
+            .controls-bar input[type="text"],
+            .controls-bar [role="spinbutton"],
+            .controls-bar .rc-input-number,
+            .controls-bar .rc-input-number-input { color: #6b7a99; background: #13161f; border: 1px solid #1e2433; }
+            .rc-slider-tooltip .rc-slider-tooltip-inner,
+            .rc-tooltip .rc-tooltip-inner { color: #6b7a99; background: #13161f; border: 1px solid #1e2433; }
             .header-bar { 
                 background: linear-gradient(90deg, #0d0f14 0%, #13161f 50%, #0d0f14 100%);
                 border-bottom: 1px solid #1e2433;
@@ -236,6 +243,13 @@ def run_app(filepath):
                 gap: 16px;
                 flex-wrap: wrap;
             }
+            .files-selection {
+                background: #13161f;
+                border-bottom: 1px solid #1e2433;
+                padding: 12px 32px;
+                display: flex;
+                align-items: center;
+             }
             .btn {
                 background: transparent;
                 border: 1px solid #1e2433;
@@ -286,6 +300,11 @@ def run_app(filepath):
             ], style={"display": "flex", "gap": "12px"}),
         ], className="header-bar"),
 
+        # File Selection
+        html.Div([
+            html.Span("FILES:", style={"fontSize": "11px", "color": DARK_THEME["subtext"], "letterSpacing": "2px"}),
+        ], className="files-selection", style={"gap": "12px"}),
+        
         # Controls bar
         html.Div([
             html.Span("GRAPHS:", style={"fontSize": "11px", "color": DARK_THEME["subtext"], "letterSpacing": "2px"}),
@@ -412,9 +431,16 @@ def run_app(filepath):
 
         return figs
 
-    port = random.randint(8050, 8099)
+    port = 8051
     print(f"\n🚀  PLUNETTE running → http://0.0.0.0:{port}\n")
-    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=True,
+        use_reloader=True,
+        dev_tools_hot_reload=True,
+        dev_tools_hot_reload_interval=1000,
+    )
     return port
 
 
@@ -432,7 +458,7 @@ def PLOTLY_THEME_AXIS():
 if __name__ == "__main__":
     params = sys.argv
     if len(params) <= 1:
-        print("Usage: python plunette_dashboard.py <logfile.csv>")
+        print("Usage: python plotting.py <logfile.csv> (install dependencies with pip install dash plotly pandas. might need venv)")
         sys.exit(1)
 
     filename = params[1]
