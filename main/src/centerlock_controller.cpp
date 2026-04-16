@@ -52,7 +52,7 @@ void CenterlockController::init()
     bool homed = home(); 
     if (homed) {
         ESP_LOGI(TAG, "Centerlock Homed!");
-        digitalWrite(led, HIGH);
+        digitalWrite(led, LOW);
     }
 
     /* Attach limit switch interrupts */
@@ -95,7 +95,6 @@ bool CenterlockController::home()
     curr_state = DISENGAGED_2WD;
 
     ESP_LOGI(TAG, "HOMED");
-    digitalWrite(led, LOW);
 
     return true;
 }   
@@ -124,7 +123,7 @@ void CenterlockController::control_loop()
                 break;
 
             case DISENGAGED_2WD:
-                //ESP_LOGI(TAG, "DISENGAGED_2WD");
+                digitalWrite(led, LOW);
                 count--;
                 if(count == 0){
                     count = 10;
@@ -149,7 +148,7 @@ void CenterlockController::control_loop()
                 break;
 
             case ENGAGED_4WD:
-                //ESP_LOGI(TAG, "ENGAGED_4WD");
+                digitalWrite(led, HIGH);
                 break;
 
             case SHIFTING_TO_2WD:

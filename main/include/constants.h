@@ -105,7 +105,7 @@ constexpr gpio_num_t ECVT_LIMIT_SWITCH_ENGAGE_PIN = GPIO_NUM_11; /* Not used */
 
 constexpr gpio_num_t CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN = GPIO_NUM_18;
 constexpr gpio_num_t CENTERLOCK_LIMIT_SWITCH_OUTBOUND_PIN = GPIO_NUM_8;
-constexpr gpio_num_t CENTERLOCK_LED_PIN = GPIO_NUM_2;
+constexpr gpio_num_t CENTERLOCK_LED_PIN = GPIO_NUM_14;
 constexpr gpio_num_t CENTERLOCK_GTS_PIN = GPIO_NUM_9; 
 
 constexpr gpio_num_t CAN_TX_PIN = GPIO_NUM_5;
