@@ -12,6 +12,8 @@
 #include <atomic>
 
 #pragma pack(push, 1)
+
+/* Values to telemeter */
 struct VehicleData {
     float time_ms;
     float engine_count; 
@@ -50,7 +52,8 @@ struct TelemetryPacket {
 };
 #pragma pack(pop)
 
-class Telemetry {
+class Telemetry
+{
 public:
     static void init();
     static void send_data(void* pvParameters = nullptr);
