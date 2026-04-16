@@ -28,15 +28,30 @@ struct VehicleData {
     float target_rpm; 
     float engine_rpm_error; 
 
-    float velocity_command; 
+    float ecvt_velocity_command; 
 
     float ecvt_velocity;
     float ecvt_pos;
     float ecvt_iq;
+
+    float ecvt_bus_voltage;
+    float ecvt_bus_current;
     
-    float inbound_limit_switch;
-    float outbound_limit_switch; 
-    float engage_limit_switch;
+    float ecvt_inbound_limit_switch;
+    float ecvt_outbound_limit_switch; 
+    float ecvt_engage_limit_switch;
+
+    float centerlock_velocity_command; 
+
+    float centerlock_velocity;
+    float centerlock_pos;
+    float centerlock_iq;
+
+    float centerlock_bus_voltage;
+    float centerlock_bus_current;
+    
+    float centerlock_inbound_limit_switch;
+    float centerlock_outbound_limit_switch; 
 };
 #pragma pack(pop)
 

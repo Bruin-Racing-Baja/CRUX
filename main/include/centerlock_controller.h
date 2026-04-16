@@ -6,6 +6,7 @@
 #include <input_output/shift_register.h>
 #include "esp_timer.h"
 #include "constants.h"
+#include <telemetry.h>
 
 class CenterlockController {
 public:
