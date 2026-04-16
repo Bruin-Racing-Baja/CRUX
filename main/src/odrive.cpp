@@ -346,11 +346,13 @@ void ODrive::set_vel_gains(float vel_gain, float vel_integrator_gain)
     memcpy(&data[4], &vel_integrator_gain, 4);
     send_can_msg(can_id, data, 8);
 }
+
 void ODrive::set_absolute_position(float pos)
 {
     uint32_t can_id = build_can_id(CAN_SET_ABSOLUTE_POSITION);
     send_can_msg(can_id, (uint8_t*)&pos, 4);
 }
+
 void ODrive::estop()
 {
     uint32_t can_id = build_can_id(CAN_ESTOP);
@@ -474,6 +476,7 @@ float ODrive::get_pos()
 {
     return pos;
 }
+
 float ODrive::get_vel()
 {
     return vel;
@@ -489,6 +492,5 @@ void ODrive::parse_iq(const uint8_t* data, uint8_t len)
     if (len < 8) return;
     
     memcpy(&iq_setpoint, &data[0], 4);
-    memcpy(&iq_measured, &data[4], 4);
-    
+    memcpy(&iq_measured, &data[4], 4); 
 }
