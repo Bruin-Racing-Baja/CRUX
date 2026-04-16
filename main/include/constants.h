@@ -116,8 +116,8 @@ constexpr gpio_num_t BUTTON_3_PIN = GPIO_NUM_1;
 constexpr gpio_num_t BUTTON_2_PIN = GPIO_NUM_44; 
 constexpr gpio_num_t BUTTON_1_PIN = GPIO_NUM_43; 
 
-constexpr gpio_num_t CENTERLOCK_SWITCH_1_PIN = BUTTON_1_PIN; 
-constexpr gpio_num_t CENTERLOCK_SWITCH_2_PIN = BUTTON_2_PIN; 
+constexpr gpio_num_t CENTERLOCK_SWITCH_1_PIN = GPIO_NUM_13; 
+constexpr gpio_num_t CENTERLOCK_SWITCH_2_PIN = GPIO_NUM_6; 
 
 constexpr gpio_num_t EXTRA_IO_2_PIN = GPIO_NUM_45; 
 constexpr gpio_num_t EXTRA_IO_1_PIN = GPIO_NUM_46; 
