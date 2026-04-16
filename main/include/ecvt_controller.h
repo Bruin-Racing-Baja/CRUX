@@ -10,7 +10,6 @@
 #include <constants.h>
 #include <input_output/shift_register.h>
 #include <odrive.h> 
-#include "esp_timer.h"
 
 typedef enum {
     NORMAL = 0, 
@@ -88,6 +87,8 @@ private:
 
     MedianFilter engine_rpm_median_filter{ENGINE_RPM_MEDIAN_FILTER_WINDOW};
     float last_engine_rpm_error;
+
+    float actuator_engage_position;
 };
 
 #endif // ECVT_CONTROLLER_H
