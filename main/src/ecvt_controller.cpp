@@ -37,18 +37,15 @@ void ECVTController::init(bool wait_for_can, Telemetry* telem)
     /* Wait for CAN Heartbeat - Blinking LEDs */
     if (wait_for_can) {
         vTaskDelay(pdMS_TO_TICKS(3000));
-        //ESP_LOGI(TAG, "time since heartbeat: %d", odrive.get_time_since_last_heartbeat()); 
         bool state = true; 
         while (odrive.get_time_since_last_heartbeat() > 5e5) {
             shift_reg->write_all_leds(state);
             vTaskDelay(pdMS_TO_TICKS(100));
             state = !state;
         }
-        //ESP_LOGI(TAG, "time since heartbeat: %d", odrive.get_time_since_last_heartbeat());
     }
     shift_reg->write_all_leds(false);
 
-    //ESP_LOGI(TAG, "Start Homing");
     bool homed = home_actuator(); 
     if (homed) {
         ESP_LOGI(TAG, "Actuator Homed!");
@@ -80,7 +77,6 @@ void ECVTController::taskWrapper(void* pvParameters) {
 }
 void ECVTController::control_loop()
 {
-    //ESP_LOGI(TAG, "Start");
     float dt_s = CONTROL_FUNCTION_INTERVAL_MS * SECONDS_PER_MS;
     float override = 0.0f;
     
@@ -112,21 +108,6 @@ void ECVTController::control_loop()
         odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
         
         odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
-        //ESP_LOGI(TAG, "Velocity Command %.2f, Geartooth rpm %.2f, Secondary rpm %.2f", velocity_command, primary_rpm, secondary_rpm);
-        //ESP_LOGI(TAG, "Gear Count Primary: %d", primary_gts.get_count());
-        // if(get_inbound_limit())
-        //     override = 10.0f;
-    
-        // if(get_outbound_limit())
-        //     override = 0.0f;
-        
-        // if(override != 0.0f) 
-        //     velocity_command = override;
-
-       
-        // if (odrive.get_pos() * ECVT_DIR > ACTUATOR_INBOUND_THRESHOLD && velocity_command > 0) {
-        //     velocity_command = 0.0f; 
-        // }
 
         if (odrive.get_pos() * ECVT_DIR <= actuator_engage_position + 0.1 && velocity_command <= 0) {
             if(odrive.get_pos() * ECVT_DIR > actuator_engage_position - 0.1)
@@ -144,15 +125,11 @@ void ECVTController::control_loop()
             odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
             odrive.set_input_vel(velocity_command * ECVT_DIR, 0.0f);
         }
-        //if(!(get_outbound_limit() && velocity_command > 0) && !(get_inbound_limit() && velocity_command < 0)) //Check signs on this
-           
-        
-        
+
         uint64_t time_us = esp_timer_get_time();
         Telemetry::back_buffer->time_ms = (float) time_us / 1e3;
 
         Telemetry::back_buffer->engine_rpm = primary_rpm;
-        //ESP_LOGI(TAG, "Engine RPM %.2f", Telemetry::back_buffer->engine_rpm); 
         Telemetry::back_buffer->secondary_rpm = secondary_rpm; 
 
         Telemetry::back_buffer->filtered_engine_rpm = filtered_primary_rpm;
@@ -174,9 +151,6 @@ void ECVTController::control_loop()
         Telemetry::back_buffer = Telemetry::front_buffer.exchange(Telemetry::back_buffer);
 
         control_cycle_count++;
-
-        // if (control_cycle_count % 20 == 0)
-        //     ESP_LOGE(TAG, "rpm: %f filtered: %f", engine_rpm_rpm, filtered_engine_rpm);
     }
 }
 
@@ -188,16 +162,7 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
     odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
 
     uint32_t start_time_ms = esp_timer_get_time() / 1e3;
-    // while(!get_engage_limit()) {
-    //     odrive.set_input_vel(ECVT_HOME_SPEED * ECVT_DIR);
-    //     if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
-    //         odrive.set_input_vel(0.0);
-    //         return false;
-    //     }
-    //     vTaskDelay(pdMS_TO_TICKS(10));
-    // }
 
-    
     /* Shift out to outbound LS */
     start_time_ms = esp_timer_get_time() / 1e3;
     while(!get_outbound_limit()) {
