@@ -1,18 +1,20 @@
-#include "esp_vfs_dev.h"
-#include "esp_vfs_usb_serial_jtag.h"
-#include "driver/usb_serial_jtag.h"
 #include <stdio.h>
-#include "driver/usb_serial_jtag.h"
 #include <string.h>
 #include <sys/param.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
+#include "esp_vfs_dev.h"
+#include "esp_vfs_usb_serial_jtag.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
+
+#include "driver/usb_serial_jtag.h"
+#include "driver/usb_serial_jtag.h"
 #include "driver/gpio.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 #include <constants.h> 
 #include <gpio_wrapper.h>
@@ -32,12 +34,10 @@
 
 static const char *TAG = "twai_sender";
 
-controller_mode_t ecvt_mode = NORMAL; 
-
 /* Globally Defined For Now */
 CenterlockLimitSwitch centerlock_ls(CENTERLOCK_LIMIT_SWITCH_OUTBOUND_PIN, CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN); 
 ShiftRegister shift_reg(SR_SER_IN_PIN, SR_SHIFT_REG_CLK_PIN, SR_REG_CLK_PIN); 
-ECVTController ecvt_controller(ecvt_mode, &shift_reg);
+ECVTController ecvt_controller(&shift_reg);
 CenterlockController centerlock_controller(CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN, CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN, CENTERLOCK_LED_PIN); 
 
 // ODrive odrive(4); 
@@ -58,7 +58,6 @@ static IRAM_ATTR bool twai_sender_tx_done_callback(twai_node_handle_t handle, co
 // Bus error callback
 static IRAM_ATTR bool twai_sender_on_error_callback(twai_node_handle_t handle, const twai_error_event_data_t *edata, void *user_ctx)
 {
-    //ESP_EARLY_LOGW(TAG2, "TWAI node error: 0x%x", edata->err_flags.val);
     return false; // No task wake required
 }
 

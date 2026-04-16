@@ -10,9 +10,9 @@ std::atomic<VehicleData*> Telemetry::front_buffer{&Telemetry::buffer_b};
 SemaphoreHandle_t Telemetry::data_mutex;
 
 int Telemetry::sequence_number = 0;
+
 void Telemetry::init()
-{
-    
+{ 
     data_mutex = xSemaphoreCreateMutex();
     sequence_number = 0;
     usb_serial_jtag_driver_config_t usb_config = {
@@ -20,9 +20,8 @@ void Telemetry::init()
         .rx_buffer_size = 1024,
     };
     
-    // Install the driver
+    /* Install the driver */
     usb_serial_jtag_driver_install(&usb_config);
-
 }
 
 bool Telemetry::lock(TickType_t timeout_ticks) {
@@ -37,8 +36,8 @@ void Telemetry::send_data(void* pvParameters) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
     const TickType_t xFrequency = pdMS_TO_TICKS(10); // 100ms period
     
-    for(;;){
-        
+    for(;;)
+    { 
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
         if(Telemetry::front_buffer.load() == nullptr) {
             continue;
@@ -49,9 +48,7 @@ void Telemetry::send_data(void* pvParameters) {
         packet.packet_type = 0x01; 
         packet.sequence_number = Telemetry::sequence_number++;
         
-        //lock();
         memcpy(&packet.payload, Telemetry::front_buffer.load(), sizeof(VehicleData));
-       // unlock();
 
         packet.checksum = esp_rom_crc32_le(0, (uint8_t*)&packet, sizeof(TelemetryPacket) - sizeof(packet.checksum));
 

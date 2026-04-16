@@ -8,8 +8,8 @@
 
 static const char *TAG = "centerlock";
 
-// make centerlock controller - has limit switch implemented 
 CenterlockController* CenterlockController::instance = nullptr;
+
 CenterlockController::CenterlockController(gpio_num_t outbound_pin_, gpio_num_t inbound_pin_, gpio_num_t cl_led_) :
 odrive(CENTERLOCK_ODRIVE_NODE_ID), 
 curr_state(UNHOMED), 
@@ -21,10 +21,10 @@ shift_start_time_ms(0)
     instance = this;
 }
 
+/* Initialize CenterlockController Objct, home and start controller */
 void CenterlockController::init() 
 {
-    bool wait_for_can = true; /* Fix this */
-
+    /* Initialize centerlock pins */
     pinMode(outbound_pin, PinMode::INPUT_PULLUP);
     pinMode(inbound_pin, PinMode::INPUT_PULLUP);
 
@@ -36,31 +36,28 @@ void CenterlockController::init()
     odrive.start();
     odrive.set_limits(CENTERLOCK_ODRIVE_VEL_LIMIT, CENTERLOCK_ODRIVE_CURRENT_LIMIT);
 
-    digitalWrite(led, HIGH);
-    vTaskDelay(pdMS_TO_TICKS(2000));
-    digitalWrite(led, LOW);
-
     /* Wait for CAN Heartbeat - Blinking LEDs */
-    if (wait_for_can) {
-        vTaskDelay(pdMS_TO_TICKS(3000));
-        bool state = HIGH; 
-        while (odrive.get_time_since_last_heartbeat() > 5e5) {
-            digitalWrite(led, state);
-            vTaskDelay(pdMS_TO_TICKS(100));
-            state = !state;
-        }
+    vTaskDelay(pdMS_TO_TICKS(3000));
+    bool state = HIGH; 
+    while (odrive.get_time_since_last_heartbeat() > 5e5) {
+        digitalWrite(led, state);
+        vTaskDelay(pdMS_TO_TICKS(100));
+        state = !state;
     }
     digitalWrite(led, HIGH);
 
-    ESP_LOGI(TAG, "Start Homing");
+    /* Home Centerlock Actuator */
     bool homed = home(); 
     if (homed) {
         ESP_LOGI(TAG, "Centerlock Homed!");
+        digitalWrite(led, HIGH);
     }
 
+    /* Attach limit switch interrupts */
     attachInterrupt(CENTERLOCK_SWITCH_1_PIN, shift_in_button_isr, InterruptMode::RISING_EDGE);    
     attachInterrupt(CENTERLOCK_SWITCH_2_PIN, shift_out_button_isr, InterruptMode::RISING_EDGE);
     
+    /* Create and start Centerlock Controller task */
     xTaskCreatePinnedToCore(taskWrapper, "ecenterlock_task", 4096, this, 10, &taskHandle, 1);
 
     const esp_timer_create_args_t timer_args = {
@@ -72,15 +69,13 @@ void CenterlockController::init()
     esp_timer_start_periodic(timerHandle, 10000);
 }
 
-// Call homing sequence when first turned on -  if fully shifted in leave in 4 or shift out 
+/* Shift to outbound on homing */ 
 bool CenterlockController::home()
 {
     vTaskDelay(pdMS_TO_TICKS(1000));
 
-    // push all the way out 
     odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);  
 
-    // set velocity on Odrive for the centerlock shifting
     odrive.set_input_vel(-1 * CENTERLOCK_DIR * CENTERLOCK_HOME_VEL, 0.0f);
     ESP_LOGI(TAG, "Pre Homing");
     uint32_t timeout_ms = 20000;
@@ -103,13 +98,14 @@ bool CenterlockController::home()
     return true;
 }   
 
-// Call centerlock controller
+/* Control loop for centerlock - State Machine */
 void CenterlockController::control_loop() 
 {
     while(true)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        // initialize the switches / controller
+
+        /* Sanity check for limit switches */
         if(get_outbound_limit() && get_inbound_limit()){
             curr_state = ERROR;
         }
@@ -175,15 +171,6 @@ bool CenterlockController::get_inbound_limit() {
   return !digitalRead(CENTERLOCK_LIMIT_SWITCH_INBOUND_PIN);
 }
 
-void CenterlockController::taskWrapper(void* pvParameters) {
-    ((CenterlockController*)pvParameters)->control_loop();
-}
-
-void CenterlockController::timerCallback(void* arg) {
-    CenterlockController* controller = (CenterlockController*)arg;
-    vTaskNotifyGiveFromISR(controller->taskHandle, NULL);
-}
-
 void IRAM_ATTR CenterlockController::shift_in_button_isr(void* p) {
     if (instance) {
         if (instance->get_state() == DISENGAGED_2WD) {
@@ -200,4 +187,13 @@ void IRAM_ATTR CenterlockController::shift_out_button_isr(void* p) {
             instance->shift_start_time_ms = esp_timer_get_time() / 1e3;
         }
     }
+}
+
+void CenterlockController::taskWrapper(void* pvParameters) {
+    ((CenterlockController*)pvParameters)->control_loop();
+}
+
+void CenterlockController::timerCallback(void* arg) {
+    CenterlockController* controller = (CenterlockController*)arg;
+    vTaskNotifyGiveFromISR(controller->taskHandle, NULL);
 }
