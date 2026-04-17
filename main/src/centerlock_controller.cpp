@@ -52,7 +52,7 @@ void CenterlockController::init()
     bool homed = home(); 
     if (homed) {
         ESP_LOGI(TAG, "Centerlock Homed!");
-        digitalWrite(led, HIGH);
+        digitalWrite(led, LOW);
     }
 
     /* Attach limit switch interrupts */
@@ -95,7 +95,6 @@ bool CenterlockController::home()
     curr_state = DISENGAGED_2WD;
 
     ESP_LOGI(TAG, "HOMED");
-    digitalWrite(led, LOW);
 
     return true;
 }   
@@ -124,7 +123,7 @@ void CenterlockController::control_loop()
                 break;
 
             case DISENGAGED_2WD:
-                //ESP_LOGI(TAG, "DISENGAGED_2WD");
+                digitalWrite(led, LOW);
                 count--;
                 if(count == 0){
                     count = 10;
@@ -149,7 +148,7 @@ void CenterlockController::control_loop()
                 break;
 
             case ENGAGED_4WD:
-                //ESP_LOGI(TAG, "ENGAGED_4WD");
+                digitalWrite(led, HIGH);
                 break;
 
             case SHIFTING_TO_2WD:
@@ -203,21 +202,34 @@ bool CenterlockController::get_inbound_limit() {
 
 void IRAM_ATTR CenterlockController::shift_in_button_isr(void* p) {
     if (instance) {
-        //printf("Shift In Button Pressed - State: %d", instance->get_state());
-        if (instance->get_state() == DISENGAGED_2WD) {
-            instance->curr_state = SHIFTING_TO_4WD; 
-            instance->shift_start_time_ms = esp_timer_get_time() / 1e3;
+        static uint64_t last_interrupt_time = 0;
+        uint64_t interrupt_time = esp_timer_get_time() / 1e3;
+
+        if (interrupt_time - last_interrupt_time > CENTERLOCK_BUTTON_DEBOUNCE_MS)
+        {
+            if (instance->get_state() == DISENGAGED_2WD)
+            {
+                instance->curr_state = SHIFTING_TO_4WD; 
+                instance->shift_start_time_ms = esp_timer_get_time() / 1e3;
+            }
         }
+        last_interrupt_time = interrupt_time;
     }
 }
 
 void IRAM_ATTR CenterlockController::shift_out_button_isr(void* p) {
     if (instance) {
-        //printf("Shift Out Button Pressed - State: %d", instance->get_state());
-        if (instance->get_state() == ENGAGED_4WD) {
-            instance->curr_state = SHIFTING_TO_2WD; 
-            instance->shift_start_time_ms = esp_timer_get_time() / 1e3;
+        static uint64_t last_interrupt_time = 0;
+        uint64_t interrupt_time = esp_timer_get_time() / 1e3;
+        if (interrupt_time - last_interrupt_time > CENTERLOCK_BUTTON_DEBOUNCE_MS)
+        {
+            if (instance->get_state() == ENGAGED_4WD)
+            {
+                instance->curr_state = SHIFTING_TO_2WD; 
+                instance->shift_start_time_ms = esp_timer_get_time() / 1e3;
+            }
         }
+        last_interrupt_time = interrupt_time;
     }
 }
 
