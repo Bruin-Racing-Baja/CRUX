@@ -25,6 +25,7 @@ constexpr int ECVT_DIR = 1.0;
 constexpr float CENTERLOCK_HOME_VEL = 2; 
 constexpr float CENTERLOCK_VEL = 20; 
 constexpr float CENTERLOCK_DIR = 1; 
+constexpr uint32_t CENTERLOCK_BUTTON_DEBOUNCE_MS = 20;
 
 /* ECVT Controller Values */
 constexpr float ACTUATOR_KP = 0.01f;   
@@ -115,8 +116,8 @@ constexpr gpio_num_t BUTTON_3_PIN = GPIO_NUM_1;
 constexpr gpio_num_t BUTTON_2_PIN = GPIO_NUM_44; 
 constexpr gpio_num_t BUTTON_1_PIN = GPIO_NUM_43; 
 
-constexpr gpio_num_t CENTERLOCK_SWITCH_1_PIN = BUTTON_1_PIN; 
-constexpr gpio_num_t CENTERLOCK_SWITCH_2_PIN = BUTTON_2_PIN; 
+constexpr gpio_num_t CENTERLOCK_SWITCH_1_PIN = GPIO_NUM_13; 
+constexpr gpio_num_t CENTERLOCK_SWITCH_2_PIN = GPIO_NUM_6; 
 
 constexpr gpio_num_t EXTRA_IO_2_PIN = GPIO_NUM_45; 
 constexpr gpio_num_t EXTRA_IO_1_PIN = GPIO_NUM_46; 

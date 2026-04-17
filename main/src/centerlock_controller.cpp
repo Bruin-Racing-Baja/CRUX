@@ -173,19 +173,34 @@ bool CenterlockController::get_inbound_limit() {
 
 void IRAM_ATTR CenterlockController::shift_in_button_isr(void* p) {
     if (instance) {
-        if (instance->get_state() == DISENGAGED_2WD) {
-            instance->curr_state = SHIFTING_TO_4WD; 
-            instance->shift_start_time_ms = esp_timer_get_time() / 1e3;
+        static uint64_t last_interrupt_time = 0;
+        uint64_t interrupt_time = esp_timer_get_time() / 1e3;
+
+        if (interrupt_time - last_interrupt_time > CENTERLOCK_BUTTON_DEBOUNCE_MS)
+        {
+            if (instance->get_state() == DISENGAGED_2WD)
+            {
+                instance->curr_state = SHIFTING_TO_4WD; 
+                instance->shift_start_time_ms = esp_timer_get_time() / 1e3;
+            }
         }
+        last_interrupt_time = interrupt_time;
     }
 }
 
 void IRAM_ATTR CenterlockController::shift_out_button_isr(void* p) {
     if (instance) {
-        if (instance->get_state() == ENGAGED_4WD) {
-            instance->curr_state = SHIFTING_TO_2WD; 
-            instance->shift_start_time_ms = esp_timer_get_time() / 1e3;
+        static uint64_t last_interrupt_time = 0;
+        uint64_t interrupt_time = esp_timer_get_time() / 1e3;
+        if (interrupt_time - last_interrupt_time > CENTERLOCK_BUTTON_DEBOUNCE_MS)
+        {
+            if (instance->get_state() == ENGAGED_4WD)
+            {
+                instance->curr_state = SHIFTING_TO_2WD; 
+                instance->shift_start_time_ms = esp_timer_get_time() / 1e3;
+            }
         }
+        last_interrupt_time = interrupt_time;
     }
 }
 
