@@ -4,10 +4,10 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 
-#include <constants.h>
-#include <gpio_wrapper.h>
-#include <telemetry.h>
-#include <sensors/shock_pot_sensor.h>
+#include "constants.h"
+#include "gpio_wrapper.h"
+#include "telemetry.h"
+#include "sensors/shock_pot_sensor.h"
 
 static const char *TAG = "daq_main";
 
@@ -36,12 +36,14 @@ static void daq_task(void* pvParameters) {
 
         // timestamp and telemetry buffer update
         uint64_t time_us = esp_timer_get_time();
-        Telemetry::back_buffer->time_ms = (float)time_us / 1e3;
+        DaqTelemetry::back_buffer->time_ms = (float)time_us / 1e3;
         
-        Telemetry::back_buffer->shock_rl_mm = shock_rear_left.get_distance_mm();
-        Telemetry::back_buffer->shock_rr_mm = shock_rear_right.get_distance_mm();
+        DaqTelemetry::back_buffer->shock_rl_mm = shock_rear_left.get_distance_mm();
+        DaqTelemetry::back_buffer->shock_rr_mm = shock_rear_right.get_distance_mm();
+        DaqTelemetry::back_buffer->shock_rl_raw = shock_rear_left.get_raw();
+        DaqTelemetry::back_buffer->shock_rr_raw = shock_rear_right.get_raw();
 
-        Telemetry::back_buffer = Telemetry::front_buffer.exchange(Telemetry::back_buffer);
+        DaqTelemetry::back_buffer = DaqTelemetry::front_buffer.exchange(DaqTelemetry::back_buffer);
     }
 }
 
@@ -49,12 +51,12 @@ extern "C" void app_main(void)
 {
     vTaskDelay(pdMS_TO_TICKS(500));
 
-    Telemetry::init();
+    DaqTelemetry::init();
 
     vTaskDelay(pdMS_TO_TICKS(500));
 
     // Telem task and DAQ task creation
-    xTaskCreatePinnedToCore(Telemetry::send_data, "telemetry_task", 4096,  nullptr, tskIDLE_PRIORITY + 5, NULL, 0);
+    xTaskCreatePinnedToCore(DaqTelemetry::send_data, "telemetry_task", 4096,  nullptr, tskIDLE_PRIORITY + 5, NULL, 0);
     xTaskCreatePinnedToCore(daq_task, "daq_task", 4096, nullptr, 10, &daq_task_handle, 0);
 
     // DAQ timer setup
@@ -64,9 +66,9 @@ extern "C" void app_main(void)
         .name = "daq_timer"
     };
 
-    // update every 10 ms (100 Hz)
+    // update every 5 ms (200 Hz)
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &daq_timer_handle));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(daq_timer_handle, 10000)); 
+    ESP_ERROR_CHECK(esp_timer_start_periodic(daq_timer_handle, 50000)); 
 
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(100));
