@@ -1,4 +1,5 @@
-# BAJA M25 ESP
+# CRUX
+CVT Ratio Utility eXecutor
 Bruin Racing Baja M25 Repository
 
 ## Install Dependencies
