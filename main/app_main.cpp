@@ -69,6 +69,8 @@ extern "C" void app_main(void)
 
     vTaskDelay(pdMS_TO_TICKS(500));
     xTaskCreatePinnedToCore(Telemetry::send_data, "telemetry_task", 4096,  nullptr, tskIDLE_PRIORITY + 5, NULL, 0);
+    ODrive::init(CAN_TX_PIN, CAN_RX_PIN, CAN_BITRATE);
+    ODrive::start();
     ecvt_controller.init(true);
     centerlock_controller.init();
 
