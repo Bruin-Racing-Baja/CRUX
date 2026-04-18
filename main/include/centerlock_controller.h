@@ -16,6 +16,8 @@ public:
         SHIFTING_TO_4WD,
         ENGAGED_4WD,
         SHIFTING_TO_2WD,
+        START_SHIFT_TO_4WD,
+        START_SHIFT_TO_2WD,
         ERROR
     };
 
