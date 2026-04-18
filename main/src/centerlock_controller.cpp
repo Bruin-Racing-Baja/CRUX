@@ -16,6 +16,7 @@ curr_state(UNHOMED),
 outbound_pin(outbound_pin_), 
 inbound_pin(inbound_pin_),
 led(cl_led_),
+led_state(LOW),
 shift_start_time_ms(0)
 {
     instance = this;
@@ -40,19 +41,20 @@ void CenterlockController::init()
 
     /* Wait for CAN Heartbeat - Blinking LEDs */
     vTaskDelay(pdMS_TO_TICKS(3000));
-    bool state = HIGH; 
     while (odrive.get_time_since_last_heartbeat() > 5e5) {
-        digitalWrite(led, state);
+        digitalWrite(led, led_state);
         vTaskDelay(pdMS_TO_TICKS(100));
-        state = !state;
+        led_state = !led_state;
     }
-    digitalWrite(led, HIGH);
+    led_state = HIGH; 
+    digitalWrite(led, led_state);
 
     /* Home Centerlock Actuator */
     bool homed = home(); 
     if (homed) {
         ESP_LOGI(TAG, "Centerlock Homed!");
-        digitalWrite(led, LOW);
+        led_state = LOW; 
+        digitalWrite(led, led_state);
     }
 
     /* Attach limit switch interrupts */
@@ -82,6 +84,13 @@ bool CenterlockController::home()
     ESP_LOGI(TAG, "Pre Homing");
     uint32_t timeout_ms = 20000;
     uint32_t start_time_ms = esp_timer_get_time() / 1e3;
+
+    if (get_inbound_limit()) {
+        odrive.set_axis_state(AXIS_STATE_IDLE); 
+        curr_state = ENGAGED_4WD; 
+        return true;
+    }
+
     while(!get_outbound_limit()) {
         odrive.set_input_vel(-1 * CENTERLOCK_DIR * CENTERLOCK_HOME_VEL, 0.0f);
         if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
@@ -118,12 +127,13 @@ void CenterlockController::control_loop()
         float velocity_command = 0.0f;
         switch(curr_state) {
             case UNHOMED:
-                //ESP_LOGI(TAG, "UNHOMED");
                 curr_state = ERROR; 
                 break;
 
             case DISENGAGED_2WD:
-                digitalWrite(led, LOW);
+                led_state = LOW; 
+                digitalWrite(led, led_state);
+
                 count--;
                 if(count == 0){
                     count = 10;
@@ -132,7 +142,6 @@ void CenterlockController::control_loop()
                 break;
 
             case SHIFTING_TO_4WD:
-                //ESP_LOGI(TAG, "SHIFTING_TO_4WD");
                 if(get_outbound_limit()) {
                     odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
                     odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
@@ -144,16 +153,20 @@ void CenterlockController::control_loop()
                     odrive.set_axis_state(AXIS_STATE_IDLE);
                     curr_state = ENGAGED_4WD;
                 }
-            
+
+                if (cycle_count % 10 == 0) {
+                    led_state = !led_state; 
+                    digitalWrite(led, led_state);
+                }
+
                 break;
 
             case ENGAGED_4WD:
-                digitalWrite(led, HIGH);
+                led_state = HIGH; 
+                digitalWrite(led, led_state);
                 break;
 
             case SHIFTING_TO_2WD:
-                // ESP_LOGI(TAG, "SHIFTING_TO_2WD");
-
                 if(get_inbound_limit()) {
                     odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
                     odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
@@ -164,6 +177,11 @@ void CenterlockController::control_loop()
                 if (get_outbound_limit()) {
                     odrive.set_axis_state(AXIS_STATE_IDLE);
                     curr_state = DISENGAGED_2WD;
+                }
+
+                if (cycle_count % 10 == 0) {
+                    led_state = !led_state; 
+                    digitalWrite(led, led_state);
                 }
 
                 break;
@@ -188,7 +206,6 @@ void CenterlockController::control_loop()
 
         Telemetry::back_buffer->centerlock_inbound_limit_switch = get_inbound_limit(); 
         Telemetry::back_buffer->centerlock_outbound_limit_switch = get_outbound_limit(); 
-        
     }
 }
 
@@ -207,7 +224,7 @@ void IRAM_ATTR CenterlockController::shift_in_button_isr(void* p) {
 
         if (interrupt_time - last_interrupt_time > CENTERLOCK_BUTTON_DEBOUNCE_MS)
         {
-            if (instance->get_state() == DISENGAGED_2WD)
+            if (instance->get_state() == DISENGAGED_2WD || instance->get_state() == SHIFTING_TO_2WD)
             {
                 instance->curr_state = SHIFTING_TO_4WD; 
                 instance->shift_start_time_ms = esp_timer_get_time() / 1e3;
@@ -223,7 +240,7 @@ void IRAM_ATTR CenterlockController::shift_out_button_isr(void* p) {
         uint64_t interrupt_time = esp_timer_get_time() / 1e3;
         if (interrupt_time - last_interrupt_time > CENTERLOCK_BUTTON_DEBOUNCE_MS)
         {
-            if (instance->get_state() == ENGAGED_4WD)
+            if (instance->get_state() == ENGAGED_4WD || instance->get_state() == SHIFTING_TO_4WD)
             {
                 instance->curr_state = SHIFTING_TO_2WD; 
                 instance->shift_start_time_ms = esp_timer_get_time() / 1e3;

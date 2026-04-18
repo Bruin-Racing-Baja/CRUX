@@ -60,7 +60,8 @@ private:
     gpio_num_t outbound_pin; 
     gpio_num_t inbound_pin; 
 
-    gpio_num_t led; 
+    gpio_num_t led;
+    bool led_state;
 
     TaskHandle_t taskHandle;
     esp_timer_handle_t timerHandle;
