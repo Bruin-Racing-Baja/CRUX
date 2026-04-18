@@ -15,7 +15,7 @@ class ECVTController
 {
 public:
     ECVTController(ShiftRegister* sr, bool wait_for_can = true);
-    void init(bool wait_for_can=true, Telemetry* telem = nullptr);
+    void init(bool wait_for_can=true);
 
 private:
     bool home_actuator(uint32_t timeout_ms=5000);

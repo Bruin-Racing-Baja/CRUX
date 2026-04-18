@@ -6,6 +6,7 @@
 #include <input_output/shift_register.h>
 #include "esp_timer.h"
 #include "constants.h"
+#include <telemetry.h>
 
 class CenterlockController {
 public:
@@ -15,6 +16,8 @@ public:
         SHIFTING_TO_4WD,
         ENGAGED_4WD,
         SHIFTING_TO_2WD,
+        START_SHIFT_TO_4WD,
+        START_SHIFT_TO_2WD,
         ERROR
     };
 
@@ -59,7 +62,8 @@ private:
     gpio_num_t outbound_pin; 
     gpio_num_t inbound_pin; 
 
-    gpio_num_t led; 
+    gpio_num_t led;
+    bool led_state;
 
     TaskHandle_t taskHandle;
     esp_timer_handle_t timerHandle;

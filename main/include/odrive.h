@@ -101,10 +101,6 @@ struct CanMessage {
 };
 #pragma pack(pop)
 
-/* Callback types */
-typedef void (*odrive_heartbeat_cb_t)(uint32_t error, uint8_t state, void* ctx);
-typedef void (*odrive_encoder_cb_t)(float pos, float vel, void* ctx);
-typedef void (*odrive_iq_cb_t)(float iq_setpoint, float iq_measured, void* ctx);
 
 class ODrive 
 {
@@ -113,11 +109,14 @@ public:
     ~ODrive();
 
     // Initialize CAN bus
-    bool init(gpio_num_t tx_pin, gpio_num_t rx_pin, uint32_t bitrate = 500000);
+    static bool init(gpio_num_t tx_pin, gpio_num_t rx_pin, uint32_t bitrate = 500000);
     
     // Start/stop CAN driver
-    bool start();
-    void stop();
+    static bool start();
+    static void stop();
+
+    void set_ecvt_odrive(){ ecvt_instance = this; }
+    void set_centerlock_odrive(){ centerlock_instance = this; }
 
     // Command functions
     void set_axis_state(odrive_axis_state_t state);
@@ -146,10 +145,9 @@ public:
     float get_vel();
     float get_iq();
 
-    // Callback registration
-    void set_heartbeat_callback(odrive_heartbeat_cb_t cb, void* ctx);
-    void set_encoder_callback(odrive_encoder_cb_t cb, void* ctx);
-    void set_iq_callback(odrive_iq_cb_t cb, void* ctx);
+    float get_bus_voltage();
+    float get_bus_current();
+
 
 private:
     static QueueHandle_t can_tx_queue;
@@ -157,7 +155,8 @@ private:
         twai_frame_t frame;
         uint8_t data[8];
     };
-
+    static ODrive* ecvt_instance;
+    static ODrive* centerlock_instance;
     // CAN message construction
     uint32_t build_can_id(uint16_t cmd_id);
     void send_can_msg(uint32_t can_id, const uint8_t* data, uint8_t len, bool remote = false);
@@ -169,53 +168,45 @@ private:
     // RX task
     static void can_tx_task(void* pvParameters);
     static void rx_task_entry(void* arg);
-    void rx_task();
-    void process_msg(const twai_frame_t& msg);
+    static void rx_task(void* arg);
+    static void process_msg(const twai_frame_t& msg);
 
     // Helper functions for parsing
     void parse_heartbeat(const uint8_t* data, uint8_t len);
     void parse_encoder_estimates(const uint8_t* data, uint8_t len);
     void parse_iq(const uint8_t* data, uint8_t len);
+    void parse_bus_voltage_current(const uint8_t* data, uint8_t len);
 
     // Heartbeat 
     uint64_t last_heartbeat_us;
     
     // Configuration
-    gpio_num_t tx_pin_;
-    gpio_num_t rx_pin_;
-    uint32_t bitrate_;
-    int rx_buffer_depth_;
+    
+    static const int RX_BUFFER_DEPTH = 64;
 
     // Task handle
-    twai_node_handle_t node_handle_;
+    static twai_node_handle_t node_handle_;
 
     // Node ID
     uint8_t node_id_; 
 
-    RxFrameBuffer* rx_pool_;
-    volatile int write_idx_;
-    volatile int read_idx_;
+    static RxFrameBuffer* rx_pool_;
+    static volatile int write_idx_;
+    static volatile int read_idx_;
 
     // Semaphores for flow control
-    SemaphoreHandle_t free_pool_sem_;
-    SemaphoreHandle_t rx_ready_sem_;
+    static SemaphoreHandle_t free_pool_sem_;
+    static SemaphoreHandle_t rx_ready_sem_;
 
     // Task handle
-    TaskHandle_t rx_task_handle_;
-    volatile bool running_;
-
-    // Callbacks
-    odrive_heartbeat_cb_t heartbeat_cb_;
-    void* heartbeat_ctx_;
-    odrive_encoder_cb_t encoder_cb_;
-    void* encoder_ctx_;
-    odrive_iq_cb_t iq_cb_;
-    void* iq_ctx_;
+    static TaskHandle_t rx_task_handle_;
+    static volatile bool running_;
     
     float pos; // Last received position from encoder estimates
     float vel; // Last received velocity from encoder estimates
 
     float iq_setpoint, iq_measured;
+    float bus_voltage, bus_current;
 };
 
 #endif 
