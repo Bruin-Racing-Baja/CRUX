@@ -387,6 +387,23 @@ void ODrive::request_temperature()
     send_can_msg(can_id, nullptr, 0);
 }
 
+void ODrive::request_total_charge_used()
+{
+    uint32_t can_id = build_can_id(CAN_RXSDO);
+    uint8_t data[8] = {0};
+    memcpy(data + 1, &TOTAL_CHARGE_USED_ID, 2);
+    send_can_msg(can_id, data, 8);
+}
+
+void ODrive::request_total_power_used()
+{
+    uint32_t can_id = build_can_id(CAN_RXSDO);
+    uint8_t data[8] = {0};
+    memcpy(data + 1, &TOTAL_POWER_USED, 2);
+    send_can_msg(can_id, data, 8);
+}
+
+
 uint32_t ODrive::get_time_since_last_heartbeat() {
     return esp_timer_get_time() - last_heartbeat_us;
 }
@@ -426,6 +443,16 @@ void ODrive::process_msg(const twai_frame_t& msg)
         case CAN_GET_BUS_VOLTAGE_CURRENT:
             instance->parse_bus_voltage_current(msg.buffer, msg.header.dlc);
             break;
+
+        case CAN_TXSDO:
+            uint16_t endpoint_id;
+            memcpy(&endpoint_id, msg.buffer + 1, 2);
+            if (endpoint_id == TOTAL_CHARGE_USED_ID) 
+                memcpy(&instance->total_charge_used, msg.buffer + 4, 4);
+            
+            else if (endpoint_id == TOTAL_POWER_USED) 
+                memcpy(&instance->total_power_used, msg.buffer + 4, 4);
+            
             
         default:
             // Unhandled message type
@@ -477,6 +504,16 @@ float ODrive::get_bus_voltage()
 float ODrive::get_bus_current()
 {
     return bus_current;
+}
+
+float ODrive::get_total_charge_used()
+{
+    return total_charge_used;
+}
+
+float ODrive::get_total_power_used()
+{
+    return total_power_used;
 }
 
 void ODrive::parse_iq(const uint8_t* data, uint8_t len)

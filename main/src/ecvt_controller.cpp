@@ -127,6 +127,8 @@ void ECVTController::control_loop()
     while(true)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        odrive.request_total_charge_used();
+        odrive.request_total_power_used();
 
         /* Grab sensor data */
         float primary_rpm = primary_gts.get_rpm();
@@ -196,6 +198,9 @@ void ECVTController::control_loop()
 
         Telemetry::back_buffer->ecvt_bus_voltage = odrive.get_bus_voltage();
         Telemetry::back_buffer->ecvt_bus_current = odrive.get_bus_current();
+
+        Telemetry::back_buffer->ecvt_total_charge_used = odrive.get_total_charge_used();
+        Telemetry::back_buffer->ecvt_total_power_used = odrive.get_total_power_used();
 
         Telemetry::back_buffer->ecvt_inbound_limit_switch = get_inbound_limit(); 
         Telemetry::back_buffer->ecvt_outbound_limit_switch = get_outbound_limit(); 

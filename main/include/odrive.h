@@ -46,6 +46,11 @@ static const uint32_t CAN_GET_TORQUES = 0x01c;
 static const uint32_t CAN_GET_POWERS = 0x01d;
 static const uint32_t CAN_ENTER_DFU_MODE = 0x01f;
 
+
+//From flat_endpoints.json 85ce0993d37aea734ee2e9edd15b188dd361f507
+static const uint16_t TOTAL_CHARGE_USED_ID = 558;
+static const uint16_t TOTAL_POWER_USED = 559;
+
 static const uint8_t INIT_SUCCESS = 0;
 static const uint8_t INIT_CAN_ERROR = 1;
 
@@ -139,6 +144,9 @@ public:
     void request_bus_voltage_current();
     void request_temperature();
 
+    void request_total_charge_used();
+    void request_total_power_used();
+
     // Getter functions 
     uint32_t get_time_since_last_heartbeat(); 
     float get_pos();
@@ -147,6 +155,9 @@ public:
 
     float get_bus_voltage();
     float get_bus_current();
+
+    float get_total_charge_used();
+    float get_total_power_used();
 
 
 private:
@@ -207,6 +218,7 @@ private:
 
     float iq_setpoint, iq_measured;
     float bus_voltage, bus_current;
+    float total_charge_used, total_power_used;
 };
 
 #endif 

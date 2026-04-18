@@ -118,6 +118,9 @@ void CenterlockController::control_loop()
         cycle_count++;
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
+        odrive.request_total_charge_used();
+        odrive.request_total_power_used();
+
         /* Sanity check for limit switches */
         if(get_outbound_limit() && get_inbound_limit()){
             curr_state = ERROR;
@@ -222,6 +225,9 @@ void CenterlockController::control_loop()
 
         Telemetry::back_buffer->centerlock_bus_voltage = odrive.get_bus_voltage();
         Telemetry::back_buffer->centerlock_bus_current = odrive.get_bus_current();
+
+        Telemetry::back_buffer->centerlock_total_charge_used = odrive.get_total_charge_used();
+        Telemetry::back_buffer->centerlock_total_power_used = odrive.get_total_power_used();
 
         Telemetry::back_buffer->centerlock_inbound_limit_switch = get_inbound_limit(); 
         Telemetry::back_buffer->centerlock_outbound_limit_switch = get_outbound_limit(); 
