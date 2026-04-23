@@ -42,7 +42,12 @@ static void daq_task(void* pvParameters) {
         DaqTelemetry::back_buffer->shock_rr_mm = shock_rear_right.get_distance_mm();
         DaqTelemetry::back_buffer->shock_rl_raw = shock_rear_left.get_raw();
         DaqTelemetry::back_buffer->shock_rr_raw = shock_rear_right.get_raw();
-
+        // static int counter = 0;
+        // if (++counter % 20 == 0) {  
+        //     ESP_LOGI(TAG, "RL: %.2f mm | RR: %.2f mm",
+        //             shock_rear_left.get_distance_mm(),
+        //             shock_rear_right.get_distance_mm());
+        // }
         DaqTelemetry::back_buffer = DaqTelemetry::front_buffer.exchange(DaqTelemetry::back_buffer);
     }
 }
@@ -67,8 +72,8 @@ extern "C" void app_main(void)
     };
 
     // update every 5 ms (200 Hz)
-    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &daq_timer_handle));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(daq_timer_handle, 50000)); 
+    esp_timer_create(&timer_args, &daq_timer_handle);
+    esp_timer_start_periodic(daq_timer_handle, 5000); 
 
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(100));
