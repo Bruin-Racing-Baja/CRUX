@@ -20,7 +20,7 @@ constexpr float CENTERLOCK_ODRIVE_CURRENT_LIMIT = 5.0;
 constexpr uint32_t CONTROL_FUNCTION_INTERVAL_MS = 10;
 
 constexpr float ECVT_HOME_SPEED = 4.0f;
-constexpr int ECVT_DIR = 1.0;
+constexpr int ECVT_DIR = -1.0;
 
 constexpr float CENTERLOCK_HOME_VEL = 10.0f; 
 constexpr float CENTERLOCK_VEL = 10.0f; 
