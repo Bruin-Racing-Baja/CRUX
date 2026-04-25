@@ -21,6 +21,11 @@ public:
         ERROR
     };
 
+    enum Button_State {
+        IN,
+        OUT
+    };
+
     static const uint32_t SET_TORQUE_SUCCESS = 0;
     static const uint32_t SET_TORQUE_OUT_LIMIT_SWITCH_ERROR = 1;
     static const uint32_t SET_TORQUE_CAN_ERROR = 2;
@@ -58,6 +63,7 @@ private:
     ODrive odrive;  
 
     State curr_state;
+    Button_State button_state;
     
     gpio_num_t outbound_pin; 
     gpio_num_t inbound_pin; 
