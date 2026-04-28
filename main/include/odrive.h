@@ -48,8 +48,8 @@ static const uint32_t CAN_ENTER_DFU_MODE = 0x01f;
 
 
 //From flat_endpoints.json 85ce0993d37aea734ee2e9edd15b188dd361f507
-static const uint16_t TOTAL_CHARGE_USED_ID = 558;
-static const uint16_t TOTAL_POWER_USED = 559;
+static const uint16_t TOTAL_CHARGE_USED_ID = 536;
+static const uint16_t TOTAL_POWER_USED = 537;
 
 static const uint8_t INIT_SUCCESS = 0;
 static const uint8_t INIT_CAN_ERROR = 1;

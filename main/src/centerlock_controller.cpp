@@ -115,6 +115,7 @@ void CenterlockController::control_loop()
 {
     int count = 10;
     int cycle_count = 0;
+    float velocity_command = 0.0f;
     while(true)
     {
         cycle_count++;

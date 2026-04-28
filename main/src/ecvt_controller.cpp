@@ -96,7 +96,6 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-    odrive.set_absolute_position(0.0f);
 
     /* Shift in to engaged LS */
     start_time_ms = esp_timer_get_time() / 1e3;
@@ -108,7 +107,9 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-    actuator_engage_position = odrive.get_pos() * ECVT_DIR; 
+    odrive.set_absolute_position(0.0f);
+
+    actuator_engage_position = 0.0f; 
 
     odrive.set_input_vel(0.0);
 
