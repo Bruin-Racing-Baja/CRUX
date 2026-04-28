@@ -71,9 +71,9 @@ extern "C" void app_main(void)
         .name = "daq_timer"
     };
 
-    // update every 5 ms (200 Hz)
+    // update every 10 ms (100 Hz)
     esp_timer_create(&timer_args, &daq_timer_handle);
-    esp_timer_start_periodic(daq_timer_handle, 5000); 
+    esp_timer_start_periodic(daq_timer_handle, 10000); 
 
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(100));
