@@ -172,6 +172,9 @@ void ECVTController::control_loop()
         /* Update telemetry buffer with current values */
         uint64_t time_us = esp_timer_get_time();
         Telemetry::back_buffer->time_ms = (float) time_us / 1e3;
+        
+        Telemetry::back_buffer->engine_count = primary_gts.get_count();
+        Telemetry::back_buffer->gear_count = secondary_gts.get_count();
 
         Telemetry::back_buffer->engine_rpm = primary_rpm;
         Telemetry::back_buffer->secondary_rpm = secondary_rpm; 
