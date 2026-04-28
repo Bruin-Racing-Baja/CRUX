@@ -178,8 +178,6 @@ void CenterlockController::control_loop()
                 }
                 break;
             default:
-                while(true)
-                    printf("dih");
                 break;
         }
 

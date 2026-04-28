@@ -18,7 +18,7 @@ public:
     void init(bool wait_for_can=true);
 
 private:
-    bool home_actuator(uint32_t timeout_ms=5000);
+    bool home_actuator(uint32_t timeout_ms=3000);
     void control_loop();
 
     bool get_outbound_limit(); 

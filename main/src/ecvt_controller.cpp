@@ -88,26 +88,17 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
 
     /* Shift out to outbound LS */
     start_time_ms = esp_timer_get_time() / 1e3;
-    while(!get_outbound_limit()) {
+    while((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
         odrive.set_input_vel(-ECVT_HOME_SPEED * ECVT_DIR);
-        if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
-            odrive.set_input_vel(0.0);
-            return false;
-        }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-
+    odrive.set_input_vel(0.0);
+    odrive.set_absolute_position(-2.3f * ECVT_DIR);
     /* Shift in to engaged LS */
+    odrive.set_input_pos(0.0f, 0, 0);
     start_time_ms = esp_timer_get_time() / 1e3;
-    while(!get_engage_limit()) {
-        odrive.set_input_vel(ECVT_HOME_SPEED * ECVT_DIR);
-        if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
-            odrive.set_input_vel(0.0);
-            return false;
-        }
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-    odrive.set_absolute_position(0.0f);
+    
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
     actuator_engage_position = 0.0f; 
 

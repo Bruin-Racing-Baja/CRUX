@@ -29,3 +29,5 @@ compile_commands.json
 
 # Cache
 .cache/
+
+logs/
