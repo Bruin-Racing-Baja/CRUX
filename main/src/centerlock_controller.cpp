@@ -161,8 +161,6 @@ void CenterlockController::control_loop()
                 }
                 break;
             case UNKNOWN:
-                while(true)
-                    printf("dih");
                 break;
         }
 
