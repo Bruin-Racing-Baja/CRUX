@@ -161,8 +161,7 @@ void CenterlockController::control_loop()
                 }
                 break;
             case UNKNOWN:
-                while(true)
-                    printf("dih");
+                /* If unhomed, allow centerlock to change state on button press anyways */
                 break;
         }
 
