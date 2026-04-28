@@ -20,7 +20,7 @@ constexpr float CENTERLOCK_ODRIVE_CURRENT_LIMIT = 5.0;
 constexpr uint32_t CONTROL_FUNCTION_INTERVAL_MS = 10;
 
 constexpr float ECVT_HOME_SPEED = 4.0f;
-constexpr int ECVT_DIR = 1.0;
+constexpr int ECVT_DIR = -1.0;
 
 constexpr float CENTERLOCK_HOME_VEL = 10.0f; 
 constexpr float CENTERLOCK_VEL = 10.0f; 
@@ -117,7 +117,7 @@ constexpr gpio_num_t BUTTON_2_PIN = GPIO_NUM_44;
 constexpr gpio_num_t BUTTON_1_PIN = GPIO_NUM_43; 
 
 constexpr gpio_num_t CENTERLOCK_SWITCH_1_PIN = GPIO_NUM_13; 
-constexpr gpio_num_t CENTERLOCK_SWITCH_2_PIN = GPIO_NUM_6; 
+constexpr gpio_num_t CENTERLOCK_SWITCH_2_PIN = GPIO_NUM_9; 
 
 constexpr gpio_num_t EXTRA_IO_2_PIN = GPIO_NUM_45; 
 constexpr gpio_num_t EXTRA_IO_1_PIN = GPIO_NUM_46; 

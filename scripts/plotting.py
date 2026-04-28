@@ -8,24 +8,14 @@ import sys
 import json
 
 VAR_NAMES = [
-    "time_ms",
-    "engine_count",
-    "gear_count",
-    "engine_rpm",
-    "secondary_rpm",
-    "filtered_engine_rpm",
-    "filtered_secondary_rpm",
-    "target_rpm",
-    "engine_rpm_error",
-    "velocity_command",
-    "ecvt_velocity",
-    "ecvt_pos",
-    "ecvt_iq",
-    "inbound_limit_switch",
-    "outbound_limit_switch",
-    "engage_limit_switch",
-    "target_engine_rpm_diff",
-    "target_engine_rpm_diff_sum",
+    "time_ms", "engine_count", "gear_count", "engine_rpm",
+    "secondary_rpm", "filtered_engine_rpm", "filtered_secondary_rpm", "target_rpm",
+    "engine_rpm_error", "ecvt_velocity_command", "ecvt_velocity", "ecvt_pos", "ecvt_iq", "ecvt_bus_voltage", "ecvt_bus_current",
+    "ecvt_total_charge_used", "ecvt_total_power_used",
+    "ecvt_inbound_limit_switch", "ecvt_outbound_limit_switch", "ecvt_engage_limit_switch",
+    "centerlock_velocity_command", "centerlock_velocity", "centerlock_pos", "centerlock_iq", 
+    "centerlock_bus_voltage", "centerlock_bus_current", 
+    "centerlock_total_charge_used", "centerlock_total_power_used","centerlock_inbound_limit_switch", "centerlock_outbound_limit_switch"
 ]
 
 X_COL = "time_ms"

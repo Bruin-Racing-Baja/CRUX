@@ -96,7 +96,6 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-    odrive.set_absolute_position(0.0f);
 
     /* Shift in to engaged LS */
     start_time_ms = esp_timer_get_time() / 1e3;
@@ -108,7 +107,9 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-    actuator_engage_position = odrive.get_pos() * ECVT_DIR; 
+    odrive.set_absolute_position(0.0f);
+
+    actuator_engage_position = 0.0f; 
 
     odrive.set_input_vel(0.0);
 
@@ -127,6 +128,8 @@ void ECVTController::control_loop()
     while(true)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        odrive.request_total_charge_used();
+        odrive.request_total_power_used();
 
         /* Grab sensor data */
         float primary_rpm = primary_gts.get_rpm();
@@ -196,6 +199,9 @@ void ECVTController::control_loop()
 
         Telemetry::back_buffer->ecvt_bus_voltage = odrive.get_bus_voltage();
         Telemetry::back_buffer->ecvt_bus_current = odrive.get_bus_current();
+
+        Telemetry::back_buffer->ecvt_total_charge_used = odrive.get_total_charge_used();
+        Telemetry::back_buffer->ecvt_total_power_used = odrive.get_total_power_used();
 
         Telemetry::back_buffer->ecvt_inbound_limit_switch = get_inbound_limit(); 
         Telemetry::back_buffer->ecvt_outbound_limit_switch = get_outbound_limit(); 
