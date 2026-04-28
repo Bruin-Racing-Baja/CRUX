@@ -12,7 +12,7 @@ CenterlockController* CenterlockController::instance = nullptr;
 
 CenterlockController::CenterlockController(gpio_num_t outbound_pin_, gpio_num_t inbound_pin_, gpio_num_t cl_led_) :
 odrive(CENTERLOCK_ODRIVE_NODE_ID), 
-curr_state(UNHOMED), 
+state(UNKNOWN), 
 outbound_pin(outbound_pin_), 
 inbound_pin(inbound_pin_),
 led(cl_led_),
@@ -87,12 +87,10 @@ bool CenterlockController::home()
 
     if (get_inbound_limit()) {
         odrive.set_axis_state(AXIS_STATE_IDLE); 
-        curr_state = ENGAGED_4WD; 
-        button_state = IN;
+        state = IN;
         return true;
     }
 
-    button_state = OUT;
     while(!get_outbound_limit()) {
         odrive.set_input_vel(-1 * CENTERLOCK_DIR * CENTERLOCK_HOME_VEL, 0.0f);
         if ((esp_timer_get_time() / 1e3 - start_time_ms) > timeout_ms) {
@@ -101,9 +99,9 @@ bool CenterlockController::home()
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
+    state = OUT;
 
     odrive.set_axis_state(AXIS_STATE_IDLE);
-    curr_state = DISENGAGED_2WD;
 
     ESP_LOGI(TAG, "HOMED");
 
@@ -126,24 +124,8 @@ void CenterlockController::control_loop()
 
         float velocity_command = 0.0f;
 
-
-        /*
-            If we want to shift in
-                if(in bound limit)
-                    state idle
-                    break;
-                set velocity mode;
-                Velcotiy command to shift in.
-            If we want to shift out
-                if(outbound limit)
-                    state idle
-                    break;
-                set velocity mode;
-                Velocity command shift out.
-
-        */
-
-        switch(button_state) {
+        switch(state) 
+        {
             case IN:
                 if (!get_inbound_limit()) {
                     odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
@@ -161,6 +143,7 @@ void CenterlockController::control_loop()
                     digitalWrite(led, 1);
                 }
                 break;
+
             case OUT:
                 if (!get_outbound_limit()){
                     odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
@@ -177,103 +160,14 @@ void CenterlockController::control_loop()
                     digitalWrite(led, 0);
                 }
                 break;
-            default:
+            case UNKNOWN:
                 while(true)
                     printf("dih");
                 break;
         }
 
-
-        // switch(curr_state) {
-        //     // case UNHOMED:
-        //     //     curr_state = ERROR; 
-        //     //     break;
-
-        //     case DISENGAGED_2WD:
-        //         led_state = LOW; 
-        //         digitalWrite(led, led_state);
-        //         odrive.set_axis_state(AXIS_STATE_IDLE);
-
-        //         if (!get_outbound_limit()) {
-        //             curr_state = START_SHIFT_TO_2WD;
-        //         }
-
-        //         break;
-
-        //     case START_SHIFT_TO_4WD:
-        //         odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
-        //         odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
-        //         odrive.set_input_vel(CENTERLOCK_DIR * CENTERLOCK_VEL);
-        //         curr_state = SHIFTING_TO_4WD;
-        //         break;
-
-        //     case START_SHIFT_TO_2WD: 
-        //         odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
-        //         odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
-        //         odrive.set_input_vel(-1 * CENTERLOCK_DIR * CENTERLOCK_VEL);
-        //         curr_state = SHIFTING_TO_2WD;
-        //         break;
-
-        //     case SHIFTING_TO_4WD:
-        //         // if(get_outbound_limit()) {
-        //         //     odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
-        //         //     odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
-        //         //     velocity_command = CENTERLOCK_VEL;
-        //         //     odrive.set_input_vel(CENTERLOCK_DIR * velocity_command);
-        //         // }
-                
-
-        //         if (get_inbound_limit()) {
-        //             curr_state = ENGAGED_4WD;
-        //         }
-
-        //         if (cycle_count % 10 == 0) {
-        //             led_state = !led_state; 
-        //             digitalWrite(led, led_state);
-        //         }
-
-        //         break;
-
-        //     case ENGAGED_4WD:
-        //         led_state = HIGH; 
-        //         odrive.set_axis_state(AXIS_STATE_IDLE);
-        //         digitalWrite(led, led_state);
-
-        //         if (!get_inbound_limit()) {
-        //             curr_state = START_SHIFT_TO_4WD;
-        //         }
-
-        //         break;
-
-        //     case SHIFTING_TO_2WD:
-        //         // if(get_inbound_limit()) {
-        //         //     odrive.set_axis_state(AXIS_STATE_CLOSED_LOOP_CONTROL);
-        //         //     odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
-        //         //     velocity_command = -1 * CENTERLOCK_VEL;
-        //         //     odrive.set_input_vel(CENTERLOCK_DIR * velocity_command);
-        //         // }
-                    
-        //         if (get_outbound_limit()) {
-        //             curr_state = DISENGAGED_2WD;
-        //         }
-
-        //         if (cycle_count % 10 == 0) {
-        //             led_state = !led_state; 
-        //             digitalWrite(led, led_state);
-        //         }
-
-        //         break;
-
-        //     // case ERROR:
-        //     //     ESP_LOGI(TAG, "ERROR");
-        //     //     odrive.set_axis_state(AXIS_STATE_IDLE);
-        //     //     break;
-        //     default:
-        //         break;
-        // }
-
         if (cycle_count % 50 == 0) {
-            ESP_LOGI(TAG, "State: %d, Inbound: %d, Outbound: %d, Velocity: %f", curr_state, get_inbound_limit(), get_outbound_limit(), velocity_command);
+            ESP_LOGI(TAG, "State: %d, Inbound: %d, Outbound: %d, Velocity: %f", state, get_inbound_limit(), get_outbound_limit(), velocity_command);
         }
 
         Telemetry::back_buffer->centerlock_velocity_command = velocity_command; 
@@ -303,44 +197,14 @@ bool CenterlockController::get_inbound_limit() {
 
 void IRAM_ATTR CenterlockController::shift_in_button_isr(void* p) {
     if (instance) {
-        instance->button_state = IN;
+        instance->state = IN;
     }
-
-    // /* Set var to shift in. */
-    // if (instance) {
-    //     static uint64_t last_interrupt_time = 0;
-    //     uint64_t interrupt_time = esp_timer_get_time() / 1e3;
-
-    //     if (interrupt_time - last_interrupt_time > CENTERLOCK_BUTTON_DEBOUNCE_MS)
-    //     {
-    //         if (instance->get_state() == DISENGAGED_2WD || instance->get_state() == SHIFTING_TO_2WD)
-    //         {
-    //             instance->curr_state = START_SHIFT_TO_4WD; 
-    //             instance->shift_start_time_ms = esp_timer_get_time() / 1e3;
-    //         }
-    //     }
-    //     last_interrupt_time = interrupt_time;
-    // }
 }
 
 void IRAM_ATTR CenterlockController::shift_out_button_isr(void* p) {
     if (instance) {
-        instance->button_state = OUT;
+        instance->state = OUT;
     }
-    // /* Set var to shift out. */
-    // if (instance) {
-    //     static uint64_t last_interrupt_time = 0;
-    //     uint64_t interrupt_time = esp_timer_get_time() / 1e3;
-    //     if (interrupt_time - last_interrupt_time > CENTERLOCK_BUTTON_DEBOUNCE_MS)
-    //     {
-    //         if (instance->get_state() == ENGAGED_4WD || instance->get_state() == SHIFTING_TO_4WD)
-    //         {
-    //             instance->curr_state = START_SHIFT_TO_2WD; 
-    //             instance->shift_start_time_ms = esp_timer_get_time() / 1e3;
-    //         }
-    //     }
-    //     last_interrupt_time = interrupt_time;
-    // }
 }
 
 void CenterlockController::taskWrapper(void* pvParameters) {
