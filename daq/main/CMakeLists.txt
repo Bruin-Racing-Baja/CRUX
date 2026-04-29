@@ -1,6 +1,7 @@
 idf_component_register(
     SRCS
         "src/sensors/shock_pot_sensor.cpp"
+        "src/sensors/gps_sensor.cpp"
         "app_main.cpp"
 
     INCLUDE_DIRS
