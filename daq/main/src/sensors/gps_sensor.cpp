@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-GPS::GPS(uart_port_t uart_port_, uint8_t tx_pin_, uint8_t rx_pin_, uint32_t baud_rate_)
+GPS::GPS(uint8_t tx_pin_, uint8_t rx_pin_, uart_port_t uart_port_, uint32_t baud_rate_)
         : uart_port(uart_port_), tx_pin(tx_pin_), rx_pin(rx_pin_), has_fix(false)
 {
     pinMode(rx_pin, PinMode::INPUT_ONLY);

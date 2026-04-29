@@ -8,12 +8,16 @@
 #include "gpio_wrapper.h"
 #include "telemetry.h"
 #include "sensors/shock_pot_sensor.h"
+#include "sensors/gps_sensor.h"
 
 static const char *TAG = "daq_main";
 
 // rear shock pots
 ShockPotSensor shock_rear_left(SHOCK_RL_PIN);
 ShockPotSensor shock_rear_right(SHOCK_RR_PIN);
+
+// gps sensor
+GPS gps(GPS_TX_PIN, GPS_RX_PIN);
 
 // DAQ task and timer handles
 static TaskHandle_t daq_task_handle = nullptr;
@@ -33,6 +37,8 @@ static void daq_task(void* pvParameters) {
 
         shock_rear_left.update();
         shock_rear_right.update();
+
+        gps.update();
 
         // timestamp and telemetry buffer update
         uint64_t time_us = esp_timer_get_time();
