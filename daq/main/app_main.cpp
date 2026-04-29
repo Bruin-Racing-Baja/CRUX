@@ -8,12 +8,14 @@
 #include "gpio_wrapper.h"
 #include "telemetry.h"
 #include "sensors/shock_pot_sensor.h"
+#include "sensors/brake_pressure_sensor.h"
 
 static const char *TAG = "daq_main";
 
 // rear shock pots
 ShockPotSensor shock_rear_left(SHOCK_RL_PIN);
 ShockPotSensor shock_rear_right(SHOCK_RR_PIN);
+BrakePressureSensor brake_pressure(BRAKE_PRESSURE_SENSOR_PIN, 5000.0f); // max 5000 psi
 
 // DAQ task and timer handles
 static TaskHandle_t daq_task_handle = nullptr;
@@ -33,6 +35,7 @@ static void daq_task(void* pvParameters) {
 
         shock_rear_left.update();
         shock_rear_right.update();
+        brake_pressure.update();
 
         // timestamp and telemetry buffer update
         uint64_t time_us = esp_timer_get_time();
@@ -42,6 +45,8 @@ static void daq_task(void* pvParameters) {
         DaqTelemetry::back_buffer->shock_rr_mm = shock_rear_right.get_distance_mm();
         DaqTelemetry::back_buffer->shock_rl_raw = shock_rear_left.get_raw();
         DaqTelemetry::back_buffer->shock_rr_raw = shock_rear_right.get_raw();
+        DaqTelemetry::back_buffer->brake_pressure_psi = brake_pressure.get_presure_psi();
+        DaqTelemetry::back_buffer->brake_pressure_raw = brake_pressure.get_raw();
         // static int counter = 0;
         // if (++counter % 20 == 0) {  
         //     ESP_LOGI(TAG, "RL: %.2f mm | RR: %.2f mm",

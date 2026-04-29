@@ -47,6 +47,8 @@ struct DaqData {
     float shock_rr_mm;
     float shock_rl_raw;
     float shock_rr_raw;
+    float brake_pressure_psi;
+    float brake_pressure_raw;
 };
 #pragma pack(pop)
 
