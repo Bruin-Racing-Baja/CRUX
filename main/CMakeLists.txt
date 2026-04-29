@@ -11,6 +11,7 @@ idf_component_register(
         "src/iir_filter.cpp"
         "src/median_filter.cpp"
         "app_main.cpp"
+        "src/sensors/gps_sensor.cpp"
 
     INCLUDE_DIRS 
         "include"

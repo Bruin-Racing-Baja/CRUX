@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-GPS::GPS(uart_port_t uart_port_ = UART_NUM_1, uint8_t tx_pin_, uint8_t rx_pin_, uint32_t baud_rate_ = GPS_BAUD_RATE)
+GPS::GPS(uart_port_t uart_port_, uint8_t tx_pin_, uint8_t rx_pin_, uint32_t baud_rate_)
         : uart_port(uart_port_), tx_pin(tx_pin_), rx_pin(rx_pin_), has_fix(false)
 {
     pinMode(rx_pin, PinMode::INPUT_ONLY);
@@ -15,7 +15,7 @@ GPS::GPS(uart_port_t uart_port_ = UART_NUM_1, uint8_t tx_pin_, uint8_t rx_pin_, 
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
-    }
+    };
 
     // apply config
     uart_param_config(uart_port, &uart_config);
@@ -30,15 +30,14 @@ bool GPS::read_sentence() {
     uint8_t c;
     // read 1 byte at a time; 0 represents do not wait
     while (uart_read_bytes(uart_port, &c, 1, 0) == 1) {
-        if (c == "\n") {
+        if (c == '\n') {
             buffer[buffer_index] = '\0';
             buffer_index = 0;
             return true;
         }
 
         if (buffer_index < GPS_BUFFER_SIZE - 1) {
-            buffer_index++;
-            buffer[buffer_index] = (char)c;
+            buffer[buffer_index++] = (char)c;
         }
     }
     return false;
@@ -53,7 +52,7 @@ float GPS::parse_coordinate(const char* raw, const char* direction) {
     float minutes = raw_val - degrees * 100;
     float decimal_degrees = degrees + minutes / 60.0f;
 
-    if (direction[0] == 'S' || direction[0] = 'W') {
+    if (direction[0] == 'S' || direction[0] == 'W') {
         decimal_degrees *= -1;
     }
     return decimal_degrees;
@@ -79,8 +78,8 @@ void GPS::parse_rmc(const char* sentence) {
 
     latitude = parse_coordinate(lat_raw, lat_dir);
     longitude = parse_coordinate(lon_raw, lon_dir);
-    speed_mps = atof(speed) * 0.514444f
-    heading_deg = atof(hdg);
+    speed_mps = atof(speed) * 0.514444f;
+    heading_deg = atof(heading);
 }
 
 // updates buffer; we only care about the $GPRMC, since it has the vals we're looking for

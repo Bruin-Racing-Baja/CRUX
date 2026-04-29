@@ -10,7 +10,7 @@
 
 class GPS {
 public:
-    GPS(uart_port_t uart_port_ = UART_NUM_1, uint8_t tx_pin_, uint8_t rx_pin_, uint32_t baud_rate_ = GPS_BAUD_RATE);
+    GPS(uart_port_t uart_port_ = UART_NUM_1, uint8_t tx_pin_ = 17, uint8_t rx_pin_ = 16, uint32_t baud_rate_ = GPS_BAUD_RATE);
     void update();
 
     float get_latitude() const { return latitude; }
