@@ -39,8 +39,8 @@ constexpr float ACTUATOR_INBOUND_THRESHOLD = 8.0f;
 constexpr uint32_t ENGINE_SAMPLE_WINDOW = 4;
 constexpr uint32_t GEAR_SAMPLE_WINDOW = 10;
 
-constexpr float ENGINE_COUNTS_PER_ROT = 24; // count / rot
-constexpr float GEAR_COUNTS_PER_ROT = 50;    // count / rot
+constexpr float ENGINE_COUNTS_PER_ROT = 48; // count / rot
+constexpr float GEAR_COUNTS_PER_ROT = 100;    // count / rot
 
 constexpr float GEAR_TO_WHEEL_RATIO = 58.0f / 19.0f;                
 constexpr float GEAR_TO_SECONDARY_RATIO = 17.0f / 50.0f;

@@ -8,7 +8,7 @@
 
 class GearToothSensor {
 public: 
-    GearToothSensor(uint32_t pin_, uint32_t sample_window_, uint32_t counts_per_rot_, uint32_t min_time_diff_us_ = 300): 
+    GearToothSensor(uint32_t pin_, uint32_t sample_window_, uint32_t counts_per_rot_, uint32_t min_time_diff_us_ = 100): 
         pin(pin_), 
         sample_window(sample_window_),
         min_time_diff_us(min_time_diff_us_),
