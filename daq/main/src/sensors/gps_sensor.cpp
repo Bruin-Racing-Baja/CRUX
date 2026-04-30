@@ -30,7 +30,7 @@ bool GPS::read_sentence() {
     uint8_t c;
     // read 1 byte at a time; 0 represents do not wait
     while (uart_read_bytes(uart_port, &c, 1, 0) == 1) {
-        // printf("%c\n", (char)c);
+        // printf("%c", (char)c);
         if (c == '\n') {
             buffer[buffer_index] = '\0';
             buffer_index = 0;
@@ -88,5 +88,11 @@ void GPS::update() {
     while (read_sentence()) {
         if (strncmp(buffer, "$GPRMC", 6) == 0)
             parse_rmc(buffer);
+    }
+
+    static int count = 0;
+    if (++count % 100 == 0) {
+        printf("GPS: fix=%d lat=%.6f lon=%.6f speed=%.2f\n",
+               has_fix, latitude, longitude, speed_mps);
     }
 }

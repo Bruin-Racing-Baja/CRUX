@@ -47,10 +47,23 @@ struct DaqData {
     float shock_rr_mm;
     float shock_rl_raw;
     float shock_rr_raw;
+
+    //gps
     float longitude;
     float latitude;
     float mps;
     float heading_deg;
+
+    //imu
+    float yaw_deg;
+    float pitch_deg;
+    float roll_deg;
+    float ax;
+    float ay;
+    float az;
+    float gx;
+    float gy;
+    float gz;
 };
 #pragma pack(pop)
 

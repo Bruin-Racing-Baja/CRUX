@@ -2,6 +2,7 @@ idf_component_register(
     SRCS
         "src/sensors/shock_pot_sensor.cpp"
         "src/sensors/gps_sensor.cpp"
+        "src/sensors/imu_sensor.cpp"
         "app_main.cpp"
 
     INCLUDE_DIRS
@@ -13,4 +14,5 @@ idf_component_register(
         esp_adc
         esp_timer
         driver
+        sh2
 )
