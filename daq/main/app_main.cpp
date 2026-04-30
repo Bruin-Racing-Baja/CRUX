@@ -39,6 +39,9 @@ static void daq_task(void* pvParameters) {
         shock_rear_right.update();
 
         gps.update();
+        // vTaskDelay(pdMS_TO_TICKS(1000)); // 1 second
+        // printf("Latitude: %f, Longitude: %f, Speed: %f, Has fix: %f\n", 
+        //     gps.get_latitude(), gps.get_longitude(), gps.get_speed_mps(), gps.get_has_fix());
 
         // timestamp and telemetry buffer update
         uint64_t time_us = esp_timer_get_time();

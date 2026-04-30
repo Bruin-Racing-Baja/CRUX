@@ -30,6 +30,7 @@ bool GPS::read_sentence() {
     uint8_t c;
     // read 1 byte at a time; 0 represents do not wait
     while (uart_read_bytes(uart_port, &c, 1, 0) == 1) {
+        // printf("%c\n", (char)c);
         if (c == '\n') {
             buffer[buffer_index] = '\0';
             buffer_index = 0;
@@ -84,7 +85,7 @@ void GPS::parse_rmc(const char* sentence) {
 
 // updates buffer; we only care about the $GPRMC, since it has the vals we're looking for
 void GPS::update() {
-    if (read_sentence()) {
+    while (read_sentence()) {
         if (strncmp(buffer, "$GPRMC", 6) == 0)
             parse_rmc(buffer);
     }
