@@ -51,6 +51,10 @@ static void daq_task(void* pvParameters) {
         DaqTelemetry::back_buffer->shock_rr_mm = shock_rear_right.get_distance_mm();
         DaqTelemetry::back_buffer->shock_rl_raw = shock_rear_left.get_raw();
         DaqTelemetry::back_buffer->shock_rr_raw = shock_rear_right.get_raw();
+        DaqTelemetry::back_buffer->latitude = gps.get_latitude();
+        DaqTelemetry::back_buffer->longitude = gps.get_longitude();
+        DaqTelemetry::back_buffer->mps = gps.get_speed_mps();
+        DaqTelemetry::back_buffer->heading_deg = gps.get_heading_deg();
         // static int counter = 0;
         // if (++counter % 20 == 0) {  
         //     ESP_LOGI(TAG, "RL: %.2f mm | RR: %.2f mm",
