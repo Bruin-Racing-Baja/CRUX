@@ -13,7 +13,7 @@ class BrakePressureSensor {
 
         inline uint32_t get_pin() const { return pin; }
         inline uint16_t get_raw() const { return raw; }
-        float get_presure_psi() const { return pressure_psi; }
+        float get_pressure_psi() const { return pressure_psi; }
 
     private:
         const uint32_t pin;
@@ -23,7 +23,7 @@ class BrakePressureSensor {
         float pressure_psi;
 
         static constexpr float R1 = 10000.0f; // 10k ohm resistor
-        static constexpr float R2 = 22000.0f; // 22k ohm resistor
+        static constexpr float R2 = 30000.0f; // 30k ohm resistor
         static constexpr float ADC_MAX = 4095.0f; // 12-bit ADC max value
         static constexpr float V_REF = 3.3f; 
         static constexpr float V_MIN = 0.5f; 
