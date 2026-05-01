@@ -7,7 +7,9 @@
 #include "constants.h"
 #include "gpio_wrapper.h"
 #include "telemetry.h"
+#include "sensors/imu_sensor.h"
 #include "sensors/shock_pot_sensor.h"
+#include "sensors/gps_sensor.h"
 #include "sensors/brake_pressure_sensor.h"
 
 static const char *TAG = "daq_main";
@@ -17,6 +19,13 @@ ShockPotSensor shock_rear_left(SHOCK_RL_PIN);
 ShockPotSensor shock_rear_right(SHOCK_RR_PIN);
 BrakePressureSensor brake_pressure_front(BRAKE_PRESSURE_FRONT_SENSOR_PIN, 5000.0f); // max 5000 psi
 BrakePressureSensor brake_pressure_back(BRAKE_PRESSURE_BACK_SENSOR_PIN, 5000.0f); // max 5000 psi
+
+// gps sensor
+GPS gps(GPS_TX_PIN, GPS_RX_PIN);
+
+//imu sensor
+IMUSensor imu(IMU_MOSI_PIN, IMU_MISO_PIN, IMU_SCK_PIN,
+              IMU_CS_PIN, IMU_INT_PIN, IMU_RST_PIN);
 
 // DAQ task and timer handles
 static TaskHandle_t daq_task_handle = nullptr;
@@ -39,6 +48,12 @@ static void daq_task(void* pvParameters) {
         brake_pressure_front.update();
         brake_pressure_back.update();
 
+        gps.update();
+        imu.update();
+        // vTaskDelay(pdMS_TO_TICKS(1000)); // 1 second
+        // printf("Latitude: %f, Longitude: %f, Speed: %f, Has fix: %f\n", 
+        //     gps.get_latitude(), gps.get_longitude(), gps.get_speed_mps(), gps.get_has_fix());
+
         // timestamp and telemetry buffer update
         uint64_t time_us = esp_timer_get_time();
         DaqTelemetry::back_buffer->time_ms = (float)time_us / 1e3;
@@ -47,6 +62,21 @@ static void daq_task(void* pvParameters) {
         DaqTelemetry::back_buffer->shock_rr_mm = shock_rear_right.get_distance_mm();
         DaqTelemetry::back_buffer->shock_rl_raw = shock_rear_left.get_raw();
         DaqTelemetry::back_buffer->shock_rr_raw = shock_rear_right.get_raw();
+        
+        DaqTelemetry::back_buffer->latitude = gps.get_latitude();
+        DaqTelemetry::back_buffer->longitude = gps.get_longitude();
+        DaqTelemetry::back_buffer->mps = gps.get_speed_mps();
+        DaqTelemetry::back_buffer->heading_deg = gps.get_heading_deg();
+
+        DaqTelemetry::back_buffer->yaw_deg   = imu.yaw();
+        DaqTelemetry::back_buffer->pitch_deg = imu.pitch();
+        DaqTelemetry::back_buffer->roll_deg  = imu.roll();
+        DaqTelemetry::back_buffer->ax        = imu.ax();
+        DaqTelemetry::back_buffer->ay        = imu.ay();
+        DaqTelemetry::back_buffer->az        = imu.az();
+        DaqTelemetry::back_buffer->gx        = imu.gx();
+        DaqTelemetry::back_buffer->gy        = imu.gy();
+        DaqTelemetry::back_buffer->gz        = imu.gz();
         DaqTelemetry::back_buffer->brake_pressure_front_psi = brake_pressure_front.get_pressure_psi();
         DaqTelemetry::back_buffer->brake_pressure_front_raw = brake_pressure_front.get_raw();
         DaqTelemetry::back_buffer->brake_pressure_back_psi = brake_pressure_back.get_pressure_psi();
@@ -75,6 +105,9 @@ extern "C" void app_main(void)
     DaqTelemetry::init();
 
     vTaskDelay(pdMS_TO_TICKS(500));
+
+    imu.init();
+    printf("IMU init done, has_fix=%d\n", imu.is_ready());
 
     // Telem task and DAQ task creation
     //xTaskCreatePinnedToCore(DaqTelemetry::send_data, "telemetry_task", 4096,  nullptr, tskIDLE_PRIORITY + 5, NULL, 0);
