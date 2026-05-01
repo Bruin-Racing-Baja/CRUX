@@ -3,6 +3,7 @@ idf_component_register(
         "src/sensors/shock_pot_sensor.cpp"
         "src/sensors/gps_sensor.cpp"
         "src/sensors/imu_sensor.cpp"
+        "src/sensors/brake_pressure_sensor.cpp"
         "app_main.cpp"
 
     INCLUDE_DIRS

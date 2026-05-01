@@ -6,7 +6,7 @@ import csv
 import os
 from datetime import datetime
 
-SERIAL_PORT      = '/dev/ttyACM0'
+SERIAL_PORT      = '/dev/daq_esp'
 BAUD_RATE        = 115200
 TIMEOUT_THRESHOLD = 2.0
 RECONNECT_DELAY  = 1.0
@@ -18,7 +18,7 @@ HEADER_FMT  = '<HI'
 HEADER_SIZE = struct.calcsize(HEADER_FMT)
 FOOTER_SIZE = 4
 
-DAQ_FIELDS = ["time_ms", "shock_rl_mm", "shock_rr_mm", "shock_rl_raw", "shock_rr_raw", "longitude", "latitude", "mps", "heading_deg"]
+DAQ_FIELDS = ["time_ms", "shock_rl_mm", "shock_rr_mm", "shock_rl_raw", "shock_rr_raw", "longitude", "latitude", "mps", "heading_deg", "brake_pressure_front_psi", "brake_pressure_front_raw", "brake_pressure_back_psi", "brake_pressure_back_raw"]
 DAQ_FMT    = f'<{len(DAQ_FIELDS)}f'
 DAQ_SIZE   = struct.calcsize(DAQ_FMT)
 

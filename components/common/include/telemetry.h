@@ -64,6 +64,10 @@ struct DaqData {
     float gx;
     float gy;
     float gz;
+    float brake_pressure_front_psi;
+    float brake_pressure_front_raw;
+    float brake_pressure_back_psi;
+    float brake_pressure_back_raw;
 };
 #pragma pack(pop)
 

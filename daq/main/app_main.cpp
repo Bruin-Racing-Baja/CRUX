@@ -10,12 +10,15 @@
 #include "sensors/imu_sensor.h"
 #include "sensors/shock_pot_sensor.h"
 #include "sensors/gps_sensor.h"
+#include "sensors/brake_pressure_sensor.h"
 
 static const char *TAG = "daq_main";
 
 // rear shock pots
 ShockPotSensor shock_rear_left(SHOCK_RL_PIN);
 ShockPotSensor shock_rear_right(SHOCK_RR_PIN);
+BrakePressureSensor brake_pressure_front(BRAKE_PRESSURE_FRONT_SENSOR_PIN, 5000.0f); // max 5000 psi
+BrakePressureSensor brake_pressure_back(BRAKE_PRESSURE_BACK_SENSOR_PIN, 5000.0f); // max 5000 psi
 
 // gps sensor
 GPS gps(GPS_TX_PIN, GPS_RX_PIN);
@@ -42,6 +45,8 @@ static void daq_task(void* pvParameters) {
 
         shock_rear_left.update();
         shock_rear_right.update();
+        brake_pressure_front.update();
+        brake_pressure_back.update();
 
         gps.update();
         imu.update();
@@ -72,12 +77,23 @@ static void daq_task(void* pvParameters) {
         DaqTelemetry::back_buffer->gx        = imu.gx();
         DaqTelemetry::back_buffer->gy        = imu.gy();
         DaqTelemetry::back_buffer->gz        = imu.gz();
+        DaqTelemetry::back_buffer->brake_pressure_front_psi = brake_pressure_front.get_pressure_psi();
+        DaqTelemetry::back_buffer->brake_pressure_front_raw = brake_pressure_front.get_raw();
+        DaqTelemetry::back_buffer->brake_pressure_back_psi = brake_pressure_back.get_pressure_psi();
+        DaqTelemetry::back_buffer->brake_pressure_back_raw = brake_pressure_back.get_raw();
         // static int counter = 0;
         // if (++counter % 20 == 0) {  
         //     ESP_LOGI(TAG, "RL: %.2f mm | RR: %.2f mm",
         //             shock_rear_left.get_distance_mm(),
         //             shock_rear_right.get_distance_mm());
         // }
+        static int print_count = 0;
+        if (++print_count >= 50) {
+            ESP_LOGI(TAG, "brake: %.2f psi (raw: %d)",
+                brake_pressure_front.get_pressure_psi(),
+                brake_pressure_front.get_raw());
+            print_count = 0;
+        }
         DaqTelemetry::back_buffer = DaqTelemetry::front_buffer.exchange(DaqTelemetry::back_buffer);
     }
 }
@@ -94,7 +110,7 @@ extern "C" void app_main(void)
     printf("IMU init done, has_fix=%d\n", imu.is_ready());
 
     // Telem task and DAQ task creation
-    xTaskCreatePinnedToCore(DaqTelemetry::send_data, "telemetry_task", 4096,  nullptr, tskIDLE_PRIORITY + 5, NULL, 0);
+    //xTaskCreatePinnedToCore(DaqTelemetry::send_data, "telemetry_task", 4096,  nullptr, tskIDLE_PRIORITY + 5, NULL, 0);
     xTaskCreatePinnedToCore(daq_task, "daq_task", 4096, nullptr, 10, &daq_task_handle, 0);
 
     // DAQ timer setup
