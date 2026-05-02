@@ -7,7 +7,7 @@ static const char *TAG = "sensor";
 void BrakePressureSensor::update() {
     int raw_raw = analogRead(pin); // Read raw ADC value (0–4095)
     raw = (uint16_t)raw_raw; 
-    ESP_LOGI(TAG, "raw_raw: %d", raw_raw);
+    //ESP_LOGI(TAG, "raw_raw: %d", raw_raw);
 
     float adc_voltage = (raw / ADC_MAX) * V_REF; // Convert raw ADC value to voltage
     float sensor_voltage = adc_voltage * (R1 + R2) / R2; // Calculate voltage across the sensor w voltage divider formula

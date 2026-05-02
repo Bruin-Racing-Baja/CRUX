@@ -15,5 +15,4 @@ idf_component_register(
         esp_adc
         esp_timer
         driver
-        sh2
 )

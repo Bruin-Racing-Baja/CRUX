@@ -55,15 +55,17 @@ struct DaqData {
     float heading_deg;
 
     //imu
-    float yaw_deg;
-    float pitch_deg;
-    float roll_deg;
-    float ax;
-    float ay;
-    float az;
-    float gx;
-    float gy;
-    float gz;
+    // float yaw_deg;
+    // float pitch_deg;
+    // float roll_deg;
+    // float ax;
+    // float ay;
+    // float az;
+    // float gx;
+    // float gy;
+    // float gz;
+
+    //brake 
     float brake_pressure_front_psi;
     float brake_pressure_front_raw;
     float brake_pressure_back_psi;

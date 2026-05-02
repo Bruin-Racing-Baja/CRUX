@@ -17,7 +17,7 @@ public:
     float get_longitude() const { return longitude; }
     float get_speed_mps() const { return speed_mps; }
     float get_heading_deg() const { return heading_deg; }
-    double get_has_fix() const { return has_fix; }
+    bool get_has_fix() const { return has_fix; }
 
 private:
     const uart_port_t uart_port;

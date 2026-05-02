@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 GPS::GPS(uint8_t tx_pin_, uint8_t rx_pin_, uart_port_t uart_port_, uint32_t baud_rate_)
-        : uart_port(uart_port_), tx_pin(tx_pin_), rx_pin(rx_pin_), has_fix(false)
+        : uart_port(uart_port_), tx_pin(tx_pin_), rx_pin(rx_pin_), latitude(0.0f), longitude(0.0f), speed_mps(0.0f), heading_deg(0.0f), has_fix(false), buffer_index(0)
 {
     pinMode(rx_pin, PinMode::INPUT_ONLY);
     pinMode(tx_pin, PinMode::OUTPUT_ONLY);
@@ -14,7 +14,8 @@ GPS::GPS(uint8_t tx_pin_, uint8_t rx_pin_, uart_port_t uart_port_, uint32_t baud
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_DEFAULT, 
     };
 
     // apply config
@@ -30,7 +31,7 @@ bool GPS::read_sentence() {
     uint8_t c;
     // read 1 byte at a time; 0 represents do not wait
     while (uart_read_bytes(uart_port, &c, 1, 0) == 1) {
-        // printf("%c", (char)c);
+        //printf("%c", (char)c);
         if (c == '\n') {
             buffer[buffer_index] = '\0';
             buffer_index = 0;

@@ -6,8 +6,8 @@ constexpr int SHOCK_RR_PIN = 8;
 constexpr int BRAKE_PRESSURE_FRONT_SENSOR_PIN = 18;
 constexpr int BRAKE_PRESSURE_BACK_SENSOR_PIN = 19;
 
-constexpr int GPS_TX_PIN = 5; // 22
-constexpr int GPS_RX_PIN = 6; // 23
+constexpr int GPS_TX_PIN = 43; // 22
+constexpr int GPS_RX_PIN = 44; // 23
 
 #define IMU_MOSI_PIN  42 //22 DI
 #define IMU_MISO_PIN  9 //25 SDA
