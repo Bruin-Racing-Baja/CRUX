@@ -72,7 +72,7 @@ extern "C" void app_main(void)
     ODrive::init(CAN_TX_PIN, CAN_RX_PIN, CAN_BITRATE);
     ODrive::start();
     ecvt_controller.init(true);
-    centerlock_controller.init();
+    //centerlock_controller.init();
 
     while(true)
     {
