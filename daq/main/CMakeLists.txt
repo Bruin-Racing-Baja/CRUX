@@ -15,4 +15,5 @@ idf_component_register(
         esp_adc
         esp_timer
         driver
+        esp32_BNO08x
 )
