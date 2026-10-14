@@ -36,7 +36,7 @@ void ShiftRegister::write_byte(uint8_t byte)
 }
 
 bool ShiftRegister::write_led(uint8_t led_num, bool value) {
-    if (led_num < 0 || led_num > 7)
+    if (led_num > 7)
         return false; 
 
     write_byte((data & ~(1u<<led_num)) | (value<<led_num)); // replaces n-th bit with value and writes to register
