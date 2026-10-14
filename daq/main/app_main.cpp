@@ -114,7 +114,9 @@ extern "C" void app_main(void)
     const esp_timer_create_args_t timer_args = {
         .callback = &daq_timer_callback,
         .arg = nullptr,
-        .name = "daq_timer"
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "daq_timer",
+        .skip_unhandled_events = false,
     };
 
     // update every 10 ms (100 Hz)
