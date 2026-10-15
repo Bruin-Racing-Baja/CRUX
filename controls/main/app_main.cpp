@@ -2,8 +2,6 @@
 #include <string.h>
 #include <sys/param.h>
 
-#include "esp_vfs_dev.h"
-#include "esp_vfs_usb_serial_jtag.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_twai.h"

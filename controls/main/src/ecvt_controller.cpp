@@ -72,7 +72,9 @@ void ECVTController::init(bool wait_for_can)
     const esp_timer_create_args_t timer_args = {
         .callback = &timerCallback,
         .arg = this,
-        .name = "ecvt_timer"
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "ecvt_timer",
+        .skip_unhandled_events = false,
     };
 
     esp_timer_create(&timer_args, &timerHandle);

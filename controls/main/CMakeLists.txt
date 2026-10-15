@@ -16,7 +16,7 @@ idf_component_register(
     REQUIRES
         common
         esp_driver_twai
-        driver 
+        esp_driver_uart 
         esp_adc 
         esp_timer
 )

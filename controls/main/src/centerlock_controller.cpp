@@ -67,7 +67,9 @@ void CenterlockController::init()
     const esp_timer_create_args_t timer_args = {
         .callback = &timerCallback,
         .arg = this,
-        .name = "ecvt_timer"
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "centerlock_timer",
+        .skip_unhandled_events = false,
     };
     esp_timer_create(&timer_args, &timerHandle);
     esp_timer_start_periodic(timerHandle, 10000);

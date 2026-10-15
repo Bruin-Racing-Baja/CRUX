@@ -4,10 +4,10 @@
 static const char* TAG = "Telem";
 
 template<typename T, uint16_t PACKET_TYPE>
-T TelemetryBase<T, PACKET_TYPE>::buffer_a = {0};
+T TelemetryBase<T, PACKET_TYPE>::buffer_a = {};
 
 template<typename T, uint16_t PACKET_TYPE>
-T TelemetryBase<T, PACKET_TYPE>::buffer_b = {0};
+T TelemetryBase<T, PACKET_TYPE>::buffer_b = {};
 
 template<typename T, uint16_t PACKET_TYPE>
 T* TelemetryBase<T, PACKET_TYPE>::back_buffer = &TelemetryBase<T, PACKET_TYPE>::buffer_a;
