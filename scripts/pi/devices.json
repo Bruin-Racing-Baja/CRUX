@@ -1,0 +1,12 @@
+{
+  "controls": {
+    "chip": "esp32s3",
+    "port": "/dev/ttyACM0",
+    "baud": 460800
+  },
+  "daq": {
+    "chip": "esp32s3",
+    "port": "/dev/ttyACM1",
+    "baud": 460800
+  }
+}
