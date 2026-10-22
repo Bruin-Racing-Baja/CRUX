@@ -20,7 +20,7 @@ Needs the ESP-IDF environment active in your shell (export.sh) so `idf.py` works
 The name (controls / daq) is the link between: project folder -> folder on the
 Pi (~/firmware/<name>) -> entry in devices.json -> serial port.
 """
-import argparse, os, shlex, subprocess, sys
+import argparse, os, shlex, subprocess, sys, tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECTS = ["controls", "daq"]
@@ -30,6 +30,14 @@ PI = os.environ.get("PI", "main@10.42.0.1")
 def run(cmd):
     print("$", " ".join(shlex.quote(c) for c in cmd))
     subprocess.run(cmd, check=True)
+
+def idf_cmd():
+    idf_path = os.environ.get("IDF_PATH")
+    if not idf_path:
+        sys.exit("ESP-IDF environment isn't active (IDF_PATH not set). "
+                 "Open the ESP-IDF PowerShell (or run export.ps1) and try again.")
+    # idf.py is a Python script, so run it with Python instead of by name
+    return [sys.executable, os.path.join(idf_path, "tools", "idf.py")]
 
 
 def send_dir(local_dir, files, remote_dir, wipe=True):
@@ -49,7 +57,12 @@ def send_dir(local_dir, files, remote_dir, wipe=True):
 
 def sync_tool():
     pi_dir = os.path.join(ROOT, "scripts", "pi")
-    send_dir(pi_dir, ["flash.py", "devices.json"], "~/flash-tool", wipe=False)
+    names = ["flash.py", "devices.json"]
+    with tempfile.TemporaryDirectory() as tmp:
+        for f in names:  # copy with Windows line endings stripped
+            data = open(os.path.join(pi_dir, f), "rb").read().replace(b"\r\n", b"\n")
+            open(os.path.join(tmp, f), "wb").write(data)
+        send_dir(tmp, names, "~/flash-tool", wipe=False)
     run(["ssh", PI, "chmod +x ~/flash-tool/flash.py"])
 
 
@@ -58,7 +71,7 @@ def deploy(name, build=True, flash=True):
     if not os.path.isdir(proj):
         sys.exit(f"no project folder: {proj}")
     if build:
-        run(["idf.py", "-C", proj, "build"])
+        run(idf_cmd() + ["-C", proj, "build"])
 
     bdir = os.path.join(proj, "build")
     flash_args = os.path.join(bdir, "flash_args")

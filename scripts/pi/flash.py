@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/home/main/esp-flash-venv/bin/python3
 """
 Runs on the Pi. Flashes ESP32s from a build dir that was rsynced over.
 
@@ -10,7 +10,8 @@ Runs on the Pi. Flashes ESP32s from a build dir that was rsynced over.
 Setup on the Pi:  pip install esptool pyserial gpiozero lgpio
 (gpiozero/lgpio only needed if a device uses en_gpio/boot_gpio)
 """
-import glob, json, os, shlex, subprocess, sys, time
+import glob, json, os, shlex, subprocess, sys, time, signal
+from contextlib import contextmanager
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = json.load(open(os.path.join(HERE, "devices.json")))
@@ -72,10 +73,11 @@ def base_args(dev):
 
 def cmd_check(name):
     dev = CFG[name]
-    ctl = BootCtl(dev)
-    ctl.enter_bootloader()
-    rc = run(base_args(dev) + ["chip_id"])
-    ctl.reset_to_app()
+    with port_free(dev):
+        ctl = BootCtl(dev)
+        ctl.enter_bootloader()
+        rc = run(base_args(dev) + ["chip_id"])
+        ctl.reset_to_app()
     return rc
 
 
@@ -91,12 +93,84 @@ def cmd_flash(name, build_dir):
     for f in pairs[1::2]:
         if not os.path.exists(os.path.join(build_dir, f)):
             sys.exit(f"missing file listed in flash_args: {f}")
-    ctl = BootCtl(dev)
-    ctl.enter_bootloader()
-    rc = run(base_args(dev) + ["write_flash"] + opts + pairs, cwd=build_dir)
-    ctl.reset_to_app()
+    with port_free(dev):
+        ctl = BootCtl(dev)
+        ctl.enter_bootloader()
+        rc = run(base_args(dev) + ["write_flash"] + opts + pairs, cwd=build_dir)
+        ctl.reset_to_app()
     print(f"[{name}] {'OK' if rc == 0 else 'FAILED'}")
     return rc
+
+def port_holders(port):
+    """Processes (other than us) that have this serial port open."""
+    real = os.path.realpath(port)
+    out = []
+    for pid in filter(str.isdigit, os.listdir("/proc")):
+        if int(pid) == os.getpid():
+            continue
+        try:
+            for fd in os.listdir(f"/proc/{pid}/fd"):
+                if os.path.realpath(f"/proc/{pid}/fd/{fd}") == real:
+                    raw = open(f"/proc/{pid}/cmdline", "rb").read().split(b"\0")[:-1]
+                    out.append({"pid": int(pid),
+                                "cmd": [c.decode() for c in raw],
+                                "cwd": os.readlink(f"/proc/{pid}/cwd")})
+                    break
+        except (PermissionError, FileNotFoundError, ProcessLookupError):
+            continue
+    return out
+
+
+def stop_holders(holders):
+    for h in holders:
+        print(f"stopping {' '.join(h['cmd'])} (pid {h['pid']})")
+        os.kill(h["pid"], signal.SIGTERM)
+    for h in holders:                      # give each up to 5 s to exit cleanly
+        for _ in range(50):
+            if not os.path.exists(f"/proc/{h['pid']}"):
+                break
+            time.sleep(0.1)
+        else:
+            os.kill(h["pid"], signal.SIGKILL)
+
+
+def wait_for_port(port, timeout=15):
+    """After a flash the board reboots and its USB port vanishes briefly."""
+    time.sleep(1.5)   # let the board actually reset first
+    end = time.time() + timeout
+    while time.time() < end and not os.path.exists(port):
+        time.sleep(0.2)
+    time.sleep(1)
+
+
+def restart_holders(holders):
+    log = open(os.path.expanduser("~/flash-tool/relaunch.log"), "a")
+    for h in holders:
+        print(f"restarting {' '.join(h['cmd'])}")
+        subprocess.Popen(h["cmd"], cwd=h["cwd"], stdin=subprocess.DEVNULL,
+                         stdout=log, stderr=subprocess.STDOUT,
+                         start_new_session=True)   # survives the ssh session ending
+
+
+@contextmanager
+def port_free(dev):
+    """Use as:  with port_free(dev): ...flash...   Logger is paused inside."""
+    if "stop_cmd" in dev:                  # Way 2 (see below)
+        subprocess.run(dev["stop_cmd"], shell=True)
+        try:
+            yield
+        finally:
+            wait_for_port(dev["port"])
+            subprocess.run(dev["start_cmd"], shell=True)
+        return
+    holders = port_holders(dev["port"])
+    stop_holders(holders)
+    try:
+        yield
+    finally:
+        if holders:
+            wait_for_port(dev["port"])
+            restart_holders(holders)
 
 
 def main():

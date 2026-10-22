@@ -1,12 +1,12 @@
 {
   "controls": {
     "chip": "esp32s3",
-    "port": "/dev/ttyACM0",
+    "port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_34:85:18:A4:C5:C0-if00",
     "baud": 460800
   },
   "daq": {
     "chip": "esp32s3",
-    "port": "/dev/ttyACM1",
+    "port": "/dev/serial/by-id/REPLACE_ME_daq",
     "baud": 460800
   }
 }
