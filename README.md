@@ -81,3 +81,8 @@ idf.py monitor
 - `sdkconfig` is machine-specific and should not be committed.
 
 
+# Running plotting script
+```
+python -m pip install dash pandas plotlyidf.py build
+python scripts/plotting.py
+```
