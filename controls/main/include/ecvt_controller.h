@@ -19,6 +19,7 @@ public:
     void init(bool wait_for_can=true);
 
 private:
+    void logging(float velocity_command);
     bool home_actuator(uint32_t timeout_ms=5000);
     void control_loop();
 

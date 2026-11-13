@@ -84,6 +84,37 @@ void ECVTController::init(bool wait_for_can)
 }
 
 /**
+ * Write ECVT data to telemetry buffer.
+ * RPM fields are written by control_loop()
+ */
+void ECVTController::logging(float velocity_command)
+{
+    uint64_t time_us = esp_timer_get_time();
+    Telemetry::back_buffer->time_ms = (float) time_us / 1e3;
+
+    Telemetry::back_buffer->ecvt_velocity_command = velocity_command; 
+    
+    Telemetry::back_buffer->ecvt_velocity = odrive.get_vel() * ECVT_DIR;
+    Telemetry::back_buffer->ecvt_pos = odrive.get_pos() * ECVT_DIR;
+    Telemetry::back_buffer->ecvt_iq = odrive.get_iq();
+
+    Telemetry::back_buffer->ecvt_bus_voltage = odrive.get_bus_voltage();
+    Telemetry::back_buffer->ecvt_bus_current = odrive.get_bus_current();
+
+    Telemetry::back_buffer->ecvt_total_charge_used = odrive.get_total_charge_used();
+    Telemetry::back_buffer->ecvt_total_power_used = odrive.get_total_power_used();
+
+    Telemetry::back_buffer->ecvt_inbound_limit_switch = get_inbound_limit(); 
+    Telemetry::back_buffer->ecvt_outbound_limit_switch = get_outbound_limit(); 
+    Telemetry::back_buffer->ecvt_engage_limit_switch = get_engage_limit(); 
+
+    Telemetry::back_buffer->throttle = throttle.get_throttle();
+    
+    Telemetry::back_buffer = Telemetry::front_buffer.exchange(Telemetry::back_buffer);
+
+}
+
+/**
  * Run shift fork through homing sequence
  * 1. Shift out to outbound limit switch 
  * 2. Shift in to engaged limit switch 
@@ -135,6 +166,7 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
 
         homing_ticks++;
 
+        logging(-ECVT_HOME_SPEED);
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
@@ -169,6 +201,8 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
         }
 
         homing_ticks++;
+
+        logging(ECVT_HOME_SPEED);
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
@@ -179,7 +213,11 @@ bool ECVTController::home_actuator(uint32_t timeout_ms)
     uint32_t actuator_engage_adjustment_ms = 500; 
     odrive.set_controller_mode(CTRL_MODE_POSITION_CONTROL, INPUT_MODE_PASSTHROUGH);
     odrive.set_input_pos(actuator_engage_position * ECVT_DIR, 0, 0);
-    vTaskDelay(pdMS_TO_TICKS(actuator_engage_adjustment_ms));
+    /* log during engage adjustment */
+    for (uint32_t t = 0; t < actuator_engage_adjustment_ms; t += 10) {
+        logging(0.0f);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
     odrive.set_controller_mode(CTRL_MODE_VELOCITY_CONTROL, INPUT_MODE_PASSTHROUGH);
     odrive.set_input_vel(0);
 
@@ -258,10 +296,7 @@ void ECVTController::control_loop()
             odrive.set_input_vel(velocity_command * ECVT_DIR, 0.0f);
         }
 
-        /* Update telemetry buffer with current values */
-        uint64_t time_us = esp_timer_get_time();
-        Telemetry::back_buffer->time_ms = (float) time_us / 1e3;
-
+        /* RPM Telem */
         Telemetry::back_buffer->engine_rpm = primary_rpm;
         Telemetry::back_buffer->secondary_rpm = secondary_rpm; 
 
@@ -271,26 +306,8 @@ void ECVTController::control_loop()
         Telemetry::back_buffer->target_rpm = ECVT_TARGET_RPM;
         Telemetry::back_buffer->engine_rpm_error = engine_rpm_error; 
 
-        Telemetry::back_buffer->ecvt_velocity_command = velocity_command; 
-        
-        Telemetry::back_buffer->ecvt_velocity = odrive.get_vel() * ECVT_DIR;
-        Telemetry::back_buffer->ecvt_pos = odrive.get_pos() * ECVT_DIR;
-        Telemetry::back_buffer->ecvt_iq = odrive.get_iq();
-
-        Telemetry::back_buffer->ecvt_bus_voltage = odrive.get_bus_voltage();
-        Telemetry::back_buffer->ecvt_bus_current = odrive.get_bus_current();
-
-        Telemetry::back_buffer->ecvt_total_charge_used = odrive.get_total_charge_used();
-        Telemetry::back_buffer->ecvt_total_power_used = odrive.get_total_power_used();
-
-        Telemetry::back_buffer->ecvt_inbound_limit_switch = get_inbound_limit(); 
-        Telemetry::back_buffer->ecvt_outbound_limit_switch = get_outbound_limit(); 
-        Telemetry::back_buffer->ecvt_engage_limit_switch = get_engage_limit(); 
-
-        Telemetry::back_buffer->throttle = throttle.get_throttle();
-        
-        Telemetry::back_buffer = Telemetry::front_buffer.exchange(Telemetry::back_buffer);
-
+        /* Actuator Telem */
+        logging(velocity_command);
         control_cycle_count++;
     }
 }
