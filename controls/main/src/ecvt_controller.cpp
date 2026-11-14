@@ -3,8 +3,10 @@
 #include "esp_timer.h"
 
 #include <macros.h>
+#include <atomic>
 
 static const char *TAG = "twai_sender";
+extern std::atomic<bool> log_override_on;
 
 ECVTController* ECVTController::instance = nullptr;
 ECVTController::ECVTController(ShiftRegister* sr, bool wait_for_can)
@@ -288,6 +290,8 @@ void ECVTController::control_loop()
         Telemetry::back_buffer->ecvt_engage_limit_switch = get_engage_limit(); 
 
         Telemetry::back_buffer->throttle = throttle.get_throttle();
+
+        Telemetry::back_buffer->log_override = log_override_on.load() ? 1.0f : 0.0f; 
         
         Telemetry::back_buffer = Telemetry::front_buffer.exchange(Telemetry::back_buffer);
 

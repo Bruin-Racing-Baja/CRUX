@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/param.h>
+#include <atomic>
 
 #include "esp_vfs_dev.h"
 #include "esp_vfs_usb_serial_jtag.h"
@@ -46,6 +47,9 @@ Button button_2(BUTTON_2_PIN);
 Button button_3(BUTTON_3_PIN);
 Button button_4(BUTTON_4_PIN);
 
+// Log override button
+std::atomic<bool> log_override_on{false};
+
 // Transmission completion callback
 static IRAM_ATTR bool twai_sender_tx_done_callback(twai_node_handle_t handle, const twai_tx_done_event_data_t *edata, void *user_ctx)
 {
@@ -61,11 +65,34 @@ static IRAM_ATTR bool twai_sender_on_error_callback(twai_node_handle_t handle, c
     return false; // No task wake required
 }
 
+static void log_button_task(void*) {
+    bool last_pressed = false;
+    int64_t last_toggle_us = 0;
+    for (;;) {
+        bool pressed = (gpio_get_level(BUTTON_1_PIN) == 0);   // active-low
+        int64_t now = esp_timer_get_time();
+        if (pressed && !last_pressed && (now - last_toggle_us) > 50000) {
+            log_override_on.store(!log_override_on.load());
+            last_toggle_us = now;
+        }
+        last_pressed = pressed;
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
 extern "C" void app_main(void)
 {
     vTaskDelay(pdMS_TO_TICKS(500));
 
     Telemetry::init();
+
+    // log override config
+    gpio_config_t btn_cfg = {};
+    btn_cfg.pin_bit_mask = 1ULL << BUTTON_1_PIN;
+    btn_cfg.mode = GPIO_MODE_INPUT;
+    btn_cfg.pull_up_en = GPIO_PULLUP_ENABLE;
+    gpio_config(&btn_cfg);
+    xTaskCreate(log_button_task, "log_btn", 2048, nullptr, 3, nullptr);
 
     vTaskDelay(pdMS_TO_TICKS(500));
     xTaskCreatePinnedToCore(Telemetry::send_data, "telemetry_task", 4096,  nullptr, tskIDLE_PRIORITY + 5, NULL, 0);

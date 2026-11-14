@@ -26,11 +26,13 @@ SENSOR_NAMES = [
     "ecvt_inbound_limit_switch", "ecvt_outbound_limit_switch", "ecvt_engage_limit_switch",
     "centerlock_velocity_command", "centerlock_velocity", "centerlock_pos", "centerlock_iq", 
     "centerlock_bus_voltage", "centerlock_bus_current", 
-    "centerlock_total_charge_used", "centerlock_total_power_used","centerlock_inbound_limit_switch", "centerlock_outbound_limit_switch"
+    "centerlock_total_charge_used", "centerlock_total_power_used","centerlock_inbound_limit_switch", "centerlock_outbound_limit_switch",
+    "throttle", "log_override"
 ]
 PAYLOAD_FLOAT_COUNT = len(SENSOR_NAMES)
 PAYLOAD_FMT = f'<{PAYLOAD_FLOAT_COUNT}f'
 PAYLOAD_SIZE = struct.calcsize(PAYLOAD_FMT)
+LOG_OVERRIDE_IDX = SENSOR_NAMES.index("log_override")
 
 # Footer: CRC32 (4 Bytes
 FOOTER_FMT = '<I'
@@ -90,9 +92,11 @@ def main():
                 packets_received = 0
                 crc_errors = 0
                 last_print_time = time.time()
+                total_packets = 0
+                log_override = False
                 while True:
                     if time.time() - last_packet_time > TIMEOUT_THRESHOLD:
-                        if packets_received > 0:
+                        if total_packets > 0 and not log_override:
                             print(f"\nData timeout (> {TIMEOUT_THRESHOLD}s). Closing file.")
                             break # Break inner loop to start a new file
                     
@@ -128,6 +132,8 @@ def main():
 
                     payload_bytes = raw_data[6 : 6 + PAYLOAD_SIZE]
                     floats = struct.unpack(PAYLOAD_FMT, payload_bytes)
+                    log_override = floats[LOG_OVERRIDE_IDX] > 0.5
+                    total_packets += 1
 
                     writer.writerow([time.time(), seq_num, pkt_type] + list(floats))
                     packets_received += 1
