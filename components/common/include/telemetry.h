@@ -60,8 +60,6 @@ struct ControlsData {
     float centerlock_outbound_limit_switch; 
 
     float throttle;
-
-    float log_override;
 };
 #pragma pack(pop)
 
